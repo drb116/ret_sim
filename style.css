@@ -1,0 +1,73 @@
+.advanced-inputs {
+    display: none;
+}
+
+.result-level {
+    display: none;
+}
+
+.result-min-level {
+    display: none;
+}
+
+
+.info {
+    display: none;
+    position: absolute;
+    background-color: #3245A4;
+    color: #FFF;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px; /* Increase padding for more space inside the box */
+    width: 200px; /* Increase width for a wider box */
+    max-height: 200px; /* Set a maximum height for the box */
+    overflow-y: auto; /* Add scrollbars if content exceeds the box height */
+    z-index: 1;
+    font-size: 16px; /* Adjust font size as needed */
+    top: -25px; /* Adjust the top position to display higher */
+    left: 20px; /* Position relative to the left edge of the parent */
+}
+
+.info-icon {
+    position: relative;
+    display: inline-block;
+}
+
+.info-icon:hover .info {
+    display: block;
+}
+
+table {
+    width: 50%;
+    border-collapse: collapse;
+}
+
+/* Style for table cells */
+td, th {
+    border: 1px solid #dddddd;
+    text-align: center;
+    padding: 2px;
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input {
+    width: 50px;
+    text-align: right;
+}
+
+.myCanvas {
+  width: 500px;
+  height:600px;
+
+}
+
+
+/* Alternate row color */
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}

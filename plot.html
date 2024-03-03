@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plotting X, Y Values</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>Plotting X, Y Values</h2>
+
+<canvas id="myChart" width="400" height="400"></canvas>
+
+<script>
+// JavaScript code for plotting x, y values
+var xValues = [1, 1, 2, 2, 3];
+var yValues = [10, 15, 7, 8, 20];
+
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Scatter Plot',
+            data: xValues.map((value, index) => ({ x: value, y: yValues[index] })),
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            x: {
+                type: 'linear',
+                position: 'bottom'
+            },
+            y: {
+                type: 'linear',
+                position: 'left'
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>
