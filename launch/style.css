@@ -1,0 +1,14 @@
+
+.rounded-circle{
+	border:1px solid;
+	border-radius:50%;
+	object-fit: cover; 
+	object-position: center;
+	width: 250px;
+	height: 250px;
+
+}
+
+h1{
+	padding: 20px;
+}
