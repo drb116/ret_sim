@@ -27,6 +27,8 @@ const stats = {};
 let plotValues = [{}, {}, {}, {}];
 let plot;
 let minGraph = 0;
+let spend_incr = 20000;
+let min_spend_incr = 20000;
 
 for (let i = 0; i < CURRENT_YEAR - STARTING_YEAR; i++) {
     output[i + 1] = {};
@@ -213,11 +215,11 @@ function print_stats() {
     }
     const ind = `${MIN_SPEND}, ${SPEND}`;
     stats[ind] = {
-        fail: num_fail_years,
-        bad: num_bad_years,
-        good: num_good_years,
-        great: num_great_years,
-        runaway: num_runaway_years
+        Fail: num_fail_years,
+        Bad: num_bad_years,
+        Good: num_good_years,
+        Great: num_great_years,
+        Runaway: num_runaway_years
     };
 
 }
@@ -237,9 +239,9 @@ function displayChart(level) {
         let cell = document.createElement("th");
         cell.textContent = "$" + Number(MIN_SPEND).toLocaleString('en');
         topRow.appendChild(cell);
-        MIN_SPEND += 20000;
+        MIN_SPEND += min_spend_incr;
     }
-    MIN_SPEND -= 20000 * 4;
+    MIN_SPEND -= min_spend_incr * 4;
     table.appendChild(topRow);
     for (let i = 0; i < 7; i++) {
         let row = document.createElement("tr");
@@ -251,13 +253,13 @@ function displayChart(level) {
             let key = "" + MIN_SPEND + ", " + SPEND;
             cell.textContent = stats[key][level];
             row.appendChild(cell);
-            MIN_SPEND += 20000
+            MIN_SPEND += min_spend_incr
         }
-        MIN_SPEND -= 20000 * 4;
+        MIN_SPEND -= min_spend_incr * 4;
         table.appendChild(row);
-        SPEND += 20000;
+        SPEND += spend_incr;
     }
-    SPEND -= 20000 * 7;
+    SPEND -= spend_incr * 7;
 
     let title = "<h1>Results</h1><h2>" + year_count + " years analyzed</h2>";
     outputElement.innerHTML = title;
@@ -300,7 +302,7 @@ function displayGraph(ind) {
         type: 'scatter',
         data: {
             datasets: [{
-                label: 'Plot of Final values with $' + (MIN_SPEND/1000 + 20 * ind) + 'k Minimum Spend',
+                label: 'Plot of Final values with $' + Math.round(MIN_SPEND/1000 + min_spend_incr/1000 * ind) + 'k Minimum Spend',
                 data: xValues.map((value, index) => ({ x: value, y: yValues[index] })),
                 backgroundColor: bgColor,
                 borderColor: bgBorder,
@@ -378,9 +380,8 @@ async function runSim() {
 
         let init_spend = SPEND;
         let init_min = MIN_SPEND;
-        let min_spend_incr = (SPEND - MIN_SPEND) / 4;
+        min_spend_incr = Math.trunc((SPEND - MIN_SPEND) / 3);
 
-        let spend_incr = 20000;
         if (SPEND < 50000) {
             spend_incr = 5000;
         }
@@ -411,7 +412,7 @@ async function runSim() {
         showLevels.style.display = "block";
         let showMinLevels = document.querySelector('.result-min-level');
         showMinLevels.style.display = "block";
-        displayChart("good");
+        displayChart("Good");
         displayGraph(0);
     } catch (error) {
         console.error("Error:", error);
