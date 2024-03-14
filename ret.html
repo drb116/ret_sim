@@ -8,17 +8,20 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
+        <h1>Retirement SImulator</h1>
+        <p>This is a basic tool to evaluate whether your portfolio can withstand the ups and downs of a market. It is not a crystal ball, and in fact it is just the opposite. This tool works by looking back historically starting in January 1970. It looks to see if your retirement would have worked if you retired that year, given the all of the market flucuations. It then looks at 1971 and does the same analysis. By looking at every year from that point forward, you can start to see a trend as to whether your protfolio would hvae held up in each of the years. Of course the future will not be anything like and one of these years, but it is a tool.</p>
+
+        <p>As a tool, it is important to understand some basic assumptions. This tool will assume you invest in only two investments during retirement, bonds with a fixed yield and an S&P 500 tracker fund. In the starting year, your Portfolio Balance (minus the bond value) will be converted to a number of shares of the S&P 500 based on the value of the S&P 500 at the start. Each quarter, you will cash in shares at the currect value to cover your costs.</p>
+
+        <p>Your costs are based on the spend that you have, but a few adjustments are taken into account. First, if you have any pension or social security entered in the advance input section, the spend will be reduced by that amount. Second, if you are using the cash-on-hand option, you may either pull money out of this account if the market is down (in order to reduce cashing out in a bad market), or add to this if the market is in an up trend.</p>
+
+        <p>Costs are also adjusted toward the minimum spend level in a down market. The actual spend in a down quarter will generally be someplace between the baseline spend and the minimum spend, depending on how much the market has declined. Small market declines do not trigger a reduction in spending.</p>
+
+        <p>Inflation is calculted in a simple format and makes annual adjustments to both the spending and the pension/SS amounts.</p>
 
         <h2>Basic Input Parameters</h2>
         <p>Input all dollars in thousands or percentages</p>
         <form id="userInputForm">
-            <!-- <label for="spend">Baseline Spend: $</label>
-            <input type="number" id="spend" name="spend">,000 <div id="spend">ℹ️
-                    <div class="info">
-                        This is the baseline target amount to spend. Scenarios will run starting at this level.
-                    </div>
-                </div>
-            <br> -->
             <label for="spend">Baseline Spend: $</label>
             <input type="number" id="spend" name="spend">,000 
             <div class="info-icon">ℹ️
@@ -139,6 +142,12 @@
 
         <div class="result-level">
             <br><hr>
+
+            <h2>Results Table</h2>
+            <p>This table shows the number of years that meet a specific threshold across both baseline spend and minimim spend levels. A fail condition is not necessarily the portofilio going to zero, but rather that there is a very likely to go to zero before 35 years. A bad scenario is one where the balance is getting low by the end of the scenario and may fail, but it could also recover depending on future years. Good scenarios are situations where the final value is higher than the starting value. Great means the final value is at least twice the starting and Runaway means that it is at least 4 times the starting.</p>
+
+            <p>Keep in mind that some of these scenarios such as great and runaway are not going to be as high because recent years are not going to allow portfolios to grow that fast. This cuts off anything less than 8 years.</p>
+
             <p>Select a Spend Level to update the chart: 
                 <select id="level"  onchange="updateLevel()">
                     <option value="fail">Fail</option>
@@ -153,6 +162,12 @@
         <p id="output"></p>
         <div class="result-min-level">
             <br><hr>
+
+            <h2>End Point Graph</h2>
+            <p>This graph shows the end points of all the different scenarios. The year 2000 is generally always the lowest point and the year 1975 is generally the highest point.</p>
+
+            <p>Keep time in mind. Some of the scenarios have more than 50 years to grow, so you may not ever actually achieve these. Others only have as little as 9 years to grow and gien another 25 years, they may go higher or lower.</p>
+
             <p>Select a Minimum Level to update the graph: 
                 <select id="min-level" onchange="updateMinLevel()">
                     <option id="min-level-0" value=0>0</option>
