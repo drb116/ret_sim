@@ -378,6 +378,19 @@ async function runSim() {
 
         let init_spend = SPEND;
         let init_min = MIN_SPEND;
+        let min_spend_incr = (SPEND - MIN_SPEND) / 4;
+
+        let spend_incr = 20000;
+        if (SPEND < 50000) {
+            spend_incr = 5000;
+        }
+        else if (SPEND < 100000) {
+            spend_incr = 10000;
+        }
+        else if (spend < 150000) {
+            spend_incr = 15000;
+        }
+
         await read_sp();
         for (let j = 0; j < 4; j++) {
             for (let i = 0; i < 7; i++) {
@@ -385,12 +398,12 @@ async function runSim() {
 
                 run_year_sim();
                 print_stats();
-                SPEND += 20000;
+                SPEND += spend_incr;
             }
             SPEND = init_spend;
             let id = document.getElementById('min-level-' + plot);
             id.innerHTML = "" + MIN_SPEND/1000 + "k";
-            MIN_SPEND += 20000;
+            MIN_SPEND += min_spend_incr;
             plot ++;
         }
         MIN_SPEND = init_min;
