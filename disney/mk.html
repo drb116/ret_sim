@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epcot Favorite Rides</title>
-    <style>
-        .wait { color: black; }
-        .short-wait { color: green; font-weight: bold; }
-        .long-wait { color: red; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Epcot Favorite Rides</h1>
+    <h1>Magic Kingdom Favorite Rides</h1>
     <ul id="rides-list"></ul>
 
     <script>
@@ -31,49 +27,7 @@
         ];
 
         const targetUrl = 'https://api.themeparks.wiki/v1/entity/75ea578a-adc8-4116-a54d-dccb60765ef9/live';
-
-        fetch(targetUrl)
-            .then(response => response.json())
-            .then(data => {
-                const myRides = [];
-                const ridesList = document.getElementById('rides-list');
-
-                data.liveData.forEach(ride => {
-                    if (favorites.includes(ride.name)) {
-                        myRides.push(ride);
-                    }
-                });
-
-                myRides.forEach(ride => {
-                    if (ride.status === "OPERATING") {
-                        const listItem = document.createElement('li');
-                        const nameSpan = document.createElement('span');
-                        const waitSpan = document.createElement('span');
-
-                        nameSpan.textContent = ride.name;
-                        
-                        if (ride.queue && ride.queue.STANDBY) {
-                            const waitTime = ride.queue.STANDBY.waitTime;
-
-                            waitSpan.textContent = ` - ${waitTime} min`;
-                            if (waitTime <= 30) {
-                                nameSpan.className = 'short-wait';
-                            } else if (waitTime >= 60) {
-                                nameSpan.className = 'long-wait';
-                            }
-                        } else {
-                            waitSpan.textContent = ` - No wait time available`;
-                        }
-
-                        waitSpan.className = 'wait';
-
-                        listItem.appendChild(nameSpan);
-                        listItem.appendChild(waitSpan);
-                        ridesList.appendChild(listItem);
-                    }
-                });
-            })
-            .catch(error => console.error('Error fetching the data:', error));
     </script>
+    <script src="fetch.js"></script>
 </body>
 </html>

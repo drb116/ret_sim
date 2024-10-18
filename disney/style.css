@@ -1,0 +1,7 @@
+.wait { color: black; }
+.short-wait { color: green; font-weight: bold; }
+.long-wait { color: red; }
+
+body {
+    font-size: 20px; /* Or whatever size you want */
+}
