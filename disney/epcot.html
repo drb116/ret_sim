@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epcot Favorites Rides</title>
+    <style>
+        .open { color: green; }
+        .closed { color: red; }
+        .wait { color: black; }
+    </style>
+</head>
+<body>
+    <h1>Epcot Favorite Rides</h1>
+    <ul id="rides-list"></ul>
+
+    <script>
+        const favorites = [
+            "Journey Into Imagination With Figment",
+            "Spaceship Earth",
+            "Guardians of the Galaxy: Cosmic Rewind",
+            "Test Track",
+            "Living with the Land",
+            "Soarin' Around the World",
+            "Remy's Ratatouille Adventure"
+        ];
+
+        fetch('https://queue-times.com/parks/5/queue_times.json')
+            .then(response => response.json())
+            .then(data => {
+                const myRides = [];
+                const ridesList = document.getElementById('rides-list');
+
+                data.lands.forEach(land => {
+                    land.rides.forEach(ride => {
+                        if (favorites.includes(ride.name)) {
+                            myRides.push(ride);
+                        }
+                    });
+                });
+
+                myRides.forEach(ride => {
+                    const listItem = document.createElement('li');
+                    const nameSpan = document.createElement('span');
+                    const waitSpan = document.createElement('span');
+
+                    nameSpan.textContent = ride.name;
+                    nameSpan.className = ride.is_open ? 'open' : 'closed';
+                    waitSpan.textContent = ` - ${ride.wait_time} min`;
+                    waitSpan.className = 'wait';
+
+                    listItem.appendChild(nameSpan);
+                    listItem.appendChild(waitSpan);
+                    ridesList.appendChild(listItem);
+                });
+            })
+            .catch(error => console.error('Error fetching the data:', error));
+    </script>
+</body>
+</html>
