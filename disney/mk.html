@@ -16,16 +16,21 @@
 
     <script>
         const favorites = [
-            "Journey Into Imagination With Figment",
-            "Spaceship Earth",
-            "Guardians of the Galaxy: Cosmic Rewind",
-            "Test Track",
-            "Living with the Land",
-            "Soarin' Around the World",
-            "Remy's Ratatouille Adventure"
+            "Jungle Cruise",
+            "Astro Orbiter",
+            "TRON Lightcycle / Run",
+            "Peter Pan's Flight",
+            "Tiana's Bayou Adventure",
+            "\"it's a small world\"",
+            "Buzz Lightyear's Space Ranger Spin",
+            "Pirates of the Caribbean",
+            "Space Mountain",
+            "Big Thunder Mountain Railroad",
+            "Seven Dwarfs Mine Train",
+            "Haunted Mansion"
         ];
 
-        const targetUrl = 'https://api.themeparks.wiki/v1/entity/47f90d2c-e191-4239-a466-5892ef59a88b/live';
+        const targetUrl = 'https://api.themeparks.wiki/v1/entity/75ea578a-adc8-4116-a54d-dccb60765ef9/live';
 
         fetch(targetUrl)
             .then(response => response.json())
