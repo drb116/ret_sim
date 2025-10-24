@@ -1,0 +1,37 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+  max-width: 800px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  margin-top: 1.5em;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.3em;
+}
+
+ul.ingredients {
+  list-style-type: disc;
+  margin-left: 1.5em;
+}
+
+ol.instructions {
+  margin-left: 1.5em;
+}
+
+.comment-section {
+  margin-top: 2em;
+  padding: 1em;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+}
+
+.back-link {
+  margin-top: 2em;
+}
