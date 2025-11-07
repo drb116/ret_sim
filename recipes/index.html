@@ -311,50 +311,134 @@
       if(!res.ok){ throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`); }
       return res.text();
     }
-    async function buildShoppingList(){
-      const selections=collectAllMenuRecipes();
-      if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
+    // 1) Pantry list (case-insensitive)
+  const PANTRY = ["salt", "oregano", "garlic"];
 
-      const byPath=new Map();
-      for(const {title,href} of selections){
-        const path=sameOriginPath(href);
-        if(!byPath.has(path)) byPath.set(path,{title,href,path});
-      }
+  // 2) Helper: does an ingredient line contain a pantry item? (word-boundary match)
+  function isPantryItem(text) {
+    const t = (text || "").toLowerCase();
+    return PANTRY.some(p => {
+      const rx = new RegExp(`(^|\\b)${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\b|$)`, "i");
+      return rx.test(t);
+    });
+  }
 
-      const results=[]; const warnings=[]; const errors=[];
-      for(const item of byPath.values()){
-        try{
-          const html=await fetchHtml(item.path);
-          const ings=extractIngredientsFromHtml(html);
-          if(!ings || ings.length===0){ warnings.push(`No ingredients found: ${item.title}`); }
-          else{ results.push(...ings); }
-        }catch(err){
-          errors.push(`Fetch failed: ${item.title} → ${item.path} (${err && err.message ? err.message : "unknown error"})`);
-        }
-      }
+    // async function buildShoppingList(){
+    //   const selections=collectAllMenuRecipes();
+    //   if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
 
-      const normalized=results.map(t=>normalizeIngredient(t)).filter(Boolean);
-      const uniq=Array.from(new Set(normalized));
+    //   const byPath=new Map();
+    //   for(const {title,href} of selections){
+    //     const path=sameOriginPath(href);
+    //     if(!byPath.has(path)) byPath.set(path,{title,href,path});
+    //   }
 
-      const list=$("#shopping-list"); list.innerHTML="";
-      uniq.forEach(it=>{ const li=document.createElement("li"); li.textContent=it; list.appendChild(li); });
+    //   const results=[]; const warnings=[]; const errors=[];
+    //   for(const item of byPath.values()){
+    //     try{
+    //       const html=await fetchHtml(item.path);
+    //       const ings=extractIngredientsFromHtml(html);
+    //       if(!ings || ings.length===0){ warnings.push(`No ingredients found: ${item.title}`); }
+    //       else{ results.push(...ings); }
+    //     }catch(err){
+    //       errors.push(`Fetch failed: ${item.title} → ${item.path} (${err && err.message ? err.message : "unknown error"})`);
+    //     }
+    //   }
 
-      $("#shopping-summary").textContent=`Collected ${uniq.length} unique ingredients from ${byPath.size} recipe(s).`;
+    //   const normalized=results.map(t=>normalizeIngredient(t)).filter(Boolean);
+    //   const uniq=Array.from(new Set(normalized));
 
-      const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
-      if(warnings.length){
-        const div=document.createElement("div");
-        div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
-        warnBox.appendChild(div);
-      }
+    //   const list=$("#shopping-list"); list.innerHTML="";
+    //   uniq.forEach(it=>{ const li=document.createElement("li"); li.textContent=it; list.appendChild(li); });
 
-      const errBox=$("#shopping-errors"); errBox.innerHTML="";
-      if(errors.length){
-        errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
-      }
+    //   $("#shopping-summary").textContent=`Collected ${uniq.length} unique ingredients from ${byPath.size} recipe(s).`;
 
-      modal.classList.add("open");
+    //   const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
+    //   if(warnings.length){
+    //     const div=document.createElement("div");
+    //     div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
+    //     warnBox.appendChild(div);
+    //   }
+
+    //   const errBox=$("#shopping-errors"); errBox.innerHTML="";
+    //   if(errors.length){
+    //     errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+    //   }
+
+    //   modal.classList.add("open");
+    // }
+
+     // 3) Replace your existing buildShoppingList with this version
+  async function buildShoppingList(){
+    const selections = collectAllMenuRecipes();
+    if (selections.length === 0) { alert("No recipes in the weekly menu yet."); return; }
+
+    // De-dupe by same-origin pathname
+    const byPath = new Map();
+    for (const { title, href } of selections) {
+      const u = new URL(href, location.href);
+      const path = u.pathname + (u.search || "");
+      if (!byPath.has(path)) byPath.set(path, { title, href, path });
     }
+
+    const results = [];   // raw ingredient lines from all recipes
+    const warnings = [];
+    const errors = [];
+
+    for (const item of byPath.values()) {
+      try {
+        const html = await fetch(item.path, { credentials: "same-origin", redirect: "follow" })
+          .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`); return r.text(); });
+        const ings = extractIngredientsFromHtml(html);
+        if (!ings || ings.length === 0) warnings.push(`No ingredients found: ${item.title}`);
+        else results.push(...ings);
+      } catch (err) {
+        errors.push(`Fetch failed: ${item.title} → ${item.path} (${err?.message || "unknown error"})`);
+      }
+    }
+
+    // Normalize
+    const normalized = results.map(t => normalizeIngredient(t)).filter(Boolean);
+
+    // Pantry filter
+    const omitted = normalized.filter(isPantryItem);
+    const kept = normalized.filter(x => !isPantryItem(x));
+
+    // Dedupe kept items (string-level)
+    const uniq = Array.from(new Set(kept));
+
+    // Render list
+    const list = document.getElementById("shopping-list");
+    list.innerHTML = "";
+    uniq.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      list.appendChild(li);
+    });
+
+    // Summary
+    const summary = document.getElementById("shopping-summary");
+    const parts = [
+      `Collected ${uniq.length} unique ingredients`,
+      `from ${byPath.size} recipe(s)`
+    ];
+    if (omitted.length) parts.push(`(excluded ${omitted.length} pantry item(s))`);
+    summary.textContent = parts.join(" ");
+
+    // Warnings / errors
+    const warnBox = document.getElementById("shopping-warnings"); warnBox.innerHTML = "";
+    if (warnings.length) {
+      const div = document.createElement("div");
+      div.innerHTML = `<p class="warn">Warnings:</p><ul>${warnings.map(w => `<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
+      warnBox.appendChild(div);
+    }
+    const errBox = document.getElementById("shopping-errors"); errBox.innerHTML = "";
+    if (errors.length) {
+      errBox.innerHTML = `<p class="warn">Errors:</p><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+    }
+
+    document.getElementById("shopping-modal").classList.add("open");
+  }
     /* ---------- end fetch block ---------- */
 
     function collectAllMenuRecipes(){
