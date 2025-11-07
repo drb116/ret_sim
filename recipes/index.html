@@ -313,7 +313,8 @@
     }
     // 1) Pantry list (case-insensitive)
   const PANTRY = ["salt", "oregano", "garlic", "basil", "parsley", "vegetable oil", "olive oil",
-    "cornstarch", "white sugar", "taco seasoning", "chicken broth", "boiling water", "black pepper"
+    "cornstarch", "white sugar", "taco seasoning", "chicken broth", "boiling water", "black pepper",
+    "chili powder", "cumin", "garam masala", "onion powder", "turmeric"
   ];
 
   // 2) Helper: does an ingredient line contain a pantry item? (word-boundary match)
@@ -322,52 +323,6 @@
     return PANTRY.some(p => t.includes(p.toLowerCase()));
   }
 
-    // async function buildShoppingList(){
-    //   const selections=collectAllMenuRecipes();
-    //   if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
-
-    //   const byPath=new Map();
-    //   for(const {title,href} of selections){
-    //     const path=sameOriginPath(href);
-    //     if(!byPath.has(path)) byPath.set(path,{title,href,path});
-    //   }
-
-    //   const results=[]; const warnings=[]; const errors=[];
-    //   for(const item of byPath.values()){
-    //     try{
-    //       const html=await fetchHtml(item.path);
-    //       const ings=extractIngredientsFromHtml(html);
-    //       if(!ings || ings.length===0){ warnings.push(`No ingredients found: ${item.title}`); }
-    //       else{ results.push(...ings); }
-    //     }catch(err){
-    //       errors.push(`Fetch failed: ${item.title} → ${item.path} (${err && err.message ? err.message : "unknown error"})`);
-    //     }
-    //   }
-
-    //   const normalized=results.map(t=>normalizeIngredient(t)).filter(Boolean);
-    //   const uniq=Array.from(new Set(normalized));
-
-    //   const list=$("#shopping-list"); list.innerHTML="";
-    //   uniq.forEach(it=>{ const li=document.createElement("li"); li.textContent=it; list.appendChild(li); });
-
-    //   $("#shopping-summary").textContent=`Collected ${uniq.length} unique ingredients from ${byPath.size} recipe(s).`;
-
-    //   const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
-    //   if(warnings.length){
-    //     const div=document.createElement("div");
-    //     div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
-    //     warnBox.appendChild(div);
-    //   }
-
-    //   const errBox=$("#shopping-errors"); errBox.innerHTML="";
-    //   if(errors.length){
-    //     errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
-    //   }
-
-    //   modal.classList.add("open");
-    // }
-
-     // 3) Replace your existing buildShoppingList with this version
   async function buildShoppingList(){
     const selections = collectAllMenuRecipes();
     if (selections.length === 0) { alert("No recipes in the weekly menu yet."); return; }
