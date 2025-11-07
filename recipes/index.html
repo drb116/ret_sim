@@ -1,165 +1,434 @@
-<!DOCTYPE html>
+<!-- /recipes/index.html — sticky planner + drag autoscroll -->
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>David’s Recipe Collection</title>
-  <link rel="icon" type="image/x-icon" href="fav.png">
+  <meta charset="utf-8" />
+  <title>David’s Recipe Collection — Weekly Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      color: #222;
-      background-color: #fafafa;
+    :root{
+      --bg:#0f172a;--panel:#111827;--muted:#1f2937;--border:#374151;--text:#e5e7eb;
+      --accent:#ffffff;--accent-2:#34d399;--warn:#f59e0b;--danger:#ef4444;--chip:#0b1224
     }
+    html,body{background:var(--bg);color:var(--text);margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+    .container{max-width:1100px;margin:0 auto;padding:24px 16px}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .header h1{margin:0;font-size:24px}
 
-    h1 {
-      text-align: center;
+    /* Sticky Weekly Menu */
+    .menu-panel{
+      position: sticky;         /* stays visible during scroll */
+      top: 0;                   /* pin to top */
+      z-index: 100;             /* above content while dragging */
+      background: var(--panel); /* solid to ensure chip visibility */
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      backdrop-filter: saturate(1.1);
+      margin-bottom: 16px;
     }
+    .menu-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .btn{cursor:pointer;border:1px solid var(--border);background:linear-gradient(180deg,#111827,#0b1020);color:var(--text);padding:8px 12px;border-radius:10px;font-weight:600;transition:transform .05s}
+    .btn:hover{transform:translateY(-1px)} .btn-primary{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+    .btn-danger{border-color:var(--danger);color:#fecaca} .btn-ghost{background:transparent}
+    .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+    .day{background:var(--muted);border:1px dashed var(--border);border-radius:12px;min-height:120px;padding:10px;display:flex;flex-direction:column}
+    .day.dragover{outline:2px dashed var(--accent);outline-offset:-6px}
+    .day-head{font-weight:700;font-size:14px;opacity:.9;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .day-list{display:flex;flex-wrap:wrap;gap:6px}
 
-    h2.section-title {
-      margin-top: 60px;
-      border-bottom: 3px solid #ccc;
-      padding-bottom: 6px;
+    /* WRAP: allow long titles to break to new lines inside chips */
+    .chip{
+      position:relative; display:inline-flex; align-items:flex-start; gap:6px;
+      padding:2px 2px 2px 0;           /* right pad to avoid text under × */
+      background:transparent; border:0; border-radius:0;
+      white-space:normal; overflow-wrap:anywhere; word-break:break-word;
+      max-width:100%; font-size:14px; line-height:1.35;
     }
+    .chip a{ color:var(--text); text-decoration:none }
+    .chip a:hover{ text-decoration:underline }
+    .chip .x{
+      position:absolute; top:1px; right:-1px; /* pinned corner */
+      width:18px; height:18px; border-radius:50%;
+      display:grid; place-items:center; border:1px solid var(--border);
+      background:#0a0f1f; color:var(--text); font-weight:700; line-height:1; opacity:.85;
+      cursor:pointer;
+    }
+    .chip .x:hover{ background:#101735 }
 
-    .recipe-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
+    .recipe-draggable{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 4px;background:#0b1020;cursor:grab;user-select:none}
+    .recipe-draggable:active{cursor:grabbing} .recipe-draggable small{display:block;opacity:.75}
 
-    .recipe-card {
-      display: block;
-      text-decoration: none;
-      color: #222;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .recipe-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    .recipe-card h2 {
-      margin-top: 0;
-      margin-bottom: 0.5em;
-    }
-
-    .recipe-card.green {
-      background-color: #eaf6ea;
-      border-left: 5px solid #3ba13b;
-    }
-
-    .recipe-card.yellow {
-      background-color: #fff9e6;
-      border-left: 5px solid #e6b800;
-    }
-
-    .recipe-card.red {
-      background-color: #fdeaea;
-      border-left: 5px solid #d44a4a;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 60px;
-      font-size: 0.9em;
-      color: #666;
-    }
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:200}
+    .modal.open{display:flex}
+    .modal-card{width:min(800px,92vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .modal-body{font-size:15px}
+    .list{columns:2;column-gap:24px} .list li{break-inside:avoid;margin:2px 0}
+    .warn{color:var(--warn)} .sr-only{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+    .errors{margin-top:8px;font-size:13px;opacity:.9}
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="header">
+      <h1>David’s Recipe Collection</h1>
+    </div>
 
-  <h1>David’s Recipe Collection</h1>
-  <p>Welcome! Explore my favorite recipes below — grouped by category for easy browsing.</p>
+    <!-- Sticky Weekly Menu -->
+    <section aria-label="Weekly Menu Planner" class="menu-panel" id="menu-planner">
+      <div class="menu-toolbar">
+        <strong>Weekly Menu</strong>
+        <button class="btn btn-primary" id="btn-shopping">Shopping List</button>
+        <button class="btn" id="btn-save">Save</button>
+        <button class="btn btn-danger" id="btn-clear">Clear Menu</button>
+      </div>
+      <div class="week-grid" id="week-grid" aria-describedby="drag-help"></div>
+      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip to remove.</p>
+    </section>
 
-  <!-- Dinners Section -->
+    <!-- Your existing recipe content below; links get enhanced. -->
+    <!-- Dinners Section -->
   <h2 class="section-title">🍽️ Dinners</h2>
 
   <!-- 🐔 Chicken Dinners -->
   <h3>Chicken Dinners</h3>
-  <div class="recipe-grid">
-    <a href="chicken-rice-casserole.html" class="recipe-card green"><h2>Chicken and Rice Casserole</h2><p>Quick and easy, but takes a while to bake.</p></a>
-    <a href="chicken-stroganoff.html" class="recipe-card yellow"><h2>Chicken and Mushroom Stroganoff</h2><p>Tender chicken and mushrooms in creamy sauce.</p></a>
-    <a href="chicken-tikka-masala.html" class="recipe-card red"><h2>Chicken Tikka Masala</h2><p>A creamy, spiced tomato-based curry.</p></a>
-    <a href="asian-orange-chicken.html" class="recipe-card red"><h2>Asian Orange Chicken</h2><p>Sweet, tangy, and spicy citrus-glazed chicken.</p></a>
-    <a href="chicken-stir-fry.html" class="recipe-card green"><h2>Chicken Stir-Fry</h2><p>Quick, colorful stir-fry with veggies and soy-ginger sauce.</p></a>
-    <a href="instant-pot-chicken-risotto.html" class="recipe-card yellow"><h2>Instant Pot Chicken Risotto</h2><p>Creamy risotto with chicken and Parmesan.</p></a>
-    <a href="pad-prik-king.html" class="recipe-card yellow"><h2>Pad Prik King</h2><p>Thai chicken and green beans in red curry sauce.</p></a>
-    <a href="instant-pot-butter-chicken.html" class="recipe-card yellow"><h2>Instant Pot Butter Chicken</h2><p>Rich and creamy with warm spices.</p></a>
-    <a href="crispy-pepperoni-chicken.html" class="recipe-card green"><h2>Crispy Pepperoni Chicken</h2><p>Pan-seared chicken with pepperoni bread crumbs.</p></a>
-    <a href="chicken-korma.html" class="recipe-card yellow"><h2>Chicken Korma</h2><p>Lots of spices and ingredients, but something different.</p></a>
-    <a href="quick-chicken-and-stuffing-casserole.html" class="recipe-card green"><h2>Chicken and Stuffing Casserole</h2><p>Chicken, broccoli, and cheesy stuffing baked together.</p></a>
-  </div>
+  <p>
+    <a href="./chicken-rice-casserole.html" style="border-color:green">Chicken and Rice Casserole</a>
+    <a href="./chicken-stroganoff.html" style="border-color:darkkhaki">Chicken and Mushroom Stroganoff</a>
+    <a href="./chicken-tikka-masala.html" style="border-color: darkred">Chicken Tikka Masala</a>
+    <a href="./asian-orange-chicken.html" style="border-color: darkred">Asian Orange Chicken</a>
+    <a href="./chicken-stir-fry.html" style="border-color: green">Chicken Stir-Fry</a>
+    <a href="./instant-pot-chicken-risotto.html" style="border-color: darkkhaki">Instant Pot Chicken Risotto</a>
+    <a href="./pad-prik-king.html" style="border-color:  darkkhaki">Pad Prik King</a>
+    <a href="./instant-pot-butter-chicken.html" style="border-color: darkkhaki">Instant Pot Butter Chicken</a>
+    <a href="./crispy-pepperoni-chicken.html" style="border-color:green">Crispy Pepperoni Chicken</a>
+    <a href="./chicken-korma.html" style="border-color: darkkhaki">Chicken Korma</a>
+    <a href="./quick-chicken-and-stuffing-casserole.html" style="border-color: green">Chicken and Stuffing Casserole</a>
+  </p>
 
   <!-- 🐄 Beef Dinners -->
   <h3>Beef Dinners</h3>
-  <div class="recipe-grid">
-    <a href="grandmas-casserole.html" class="recipe-card red"><h2>Grandma’s Casserole</h2><p>Classic comfort food with beef, noodles, and creamy cheese layers.</p></a>
-    <a href="beef-enchiladas.html" class="recipe-card yellow"><h2>Beef Enchiladas</h2><p>Soft tortillas stuffed with spicy ground beef, beans, and sauce.</p></a>
-    <a href="ground-beef-spinach-casserole.html" class="recipe-card yellow"><h2>Ground Beef and Spinach Casserole</h2><p>Creamy, cheesy comfort casserole.</p></a>
-    <a href="hamburger-potato-casserole.html" class="recipe-card yellow"><h2>Hamburger Potato Casserole</h2><p>Hearty casserole with potatoes, beef, and cheese.</p></a>
-    <a href="easy-korean-ground-beef-bowl.html" class="recipe-card green"><h2>Easy Korean Ground Beef Bowl</h2><p>Sweet-savory beef with garlic, soy, and ginger.</p></a>
-    <a href="lasagna.html" class="recipe-card red"><h2>World’s Best Lasagna</h2><p>Classic lasagna with slow-cooked sauce.</p></a>
-    <a href="shepherds-pie-vi.html" class="recipe-card yellow"><h2>Shepherd’s Pie</h2><p>Layers of beef, carrots, and mashed potatoes.</p></a>
-    <a href="taco-bake-casserole.html" class="recipe-card green"><h2>Taco Bake Casserole</h2><p>Layers of seasoned beef, taco shells, and melted cheese.</p></a>
-    <a href="one-pot-ground-beef-stroganoff.html" class="recipe-card green"><h2>One-Pot Ground Beef Stroganoff</h2><p>Quick, creamy beef and noodles.</p></a>
-    <a href="spicy-creamy-weeknight-bolognese.html" class="recipe-card yellow"><h2>Spicy Creamy Weeknight Bolognese</h2><p>Red curry pasta sauce with beef and tomato.</p></a>
-    <a href="smothered-hamburger-steak.html" class="recipe-card green"><h2>Smothered Hamburger Steak</h2><p>Juicy beef patties simmered in mushroom-onion gravy.</p></a>
-    <a href="slow-ooker-chili.html" class="recipe-card red"><h2>Slow Cooker Chili</h2><p>Hearty chili with beef, beans, and cocoa.</p></a>
-  </div>
+    <a href="./grandmas-casserole.html" style="border-color:darkred">Grandma’s Casserole</a>
+    <a href="./beef-enchiladas.html" style="border-color:darkkhaki">Beef Enchiladas</a>
+    <a href="./ground-beef-spinach-casserole.html" style="border-color:darkkhaki">Ground Beef and Spinach Casserole</a>
+    <a href="./hamburger-potato-casserole.html" style="border-color:darkkhaki">Hamburger Potato Casserole</a>
+    <a href="./easy-korean-ground-beef-bowl.html" style="border-color:green">Easy Korean Ground Beef Bowl</a>
+    <a href="./lasagna.html" style="border-color:darkred">World’s Best Lasagna</a>
+    <a href="./shepherds-pie-vi.html" style="border-color:darkkhaki">Shepherd’s Pie</a>
+    <a href="./taco-bake-casserole.html" style="border-color:green">Taco Bake Casserole</a>
+    <a href="./one-pot-ground-beef-stroganoff.html" style="border-color:green">One-Pot Ground Beef Stroganoff</a>
+    <a href="./spicy-creamy-weeknight-bolognese.html" style="border-color:darkkhaki">Spicy Creamy Weeknight Bolognese</a>
+    <a href="./smothered-hamburger-steak.html" style="border-color:green">Smothered Hamburger Steak</a>
+    <a href="./slow-ooker-chili.html" style="border-color:darkred">Slow Cooker Chili</a>
 
   <!-- 🍲 Other Dinners -->
   <h3>Other Dinners</h3>
-  <div class="recipe-grid">
-    <a href="jambalaya.html" class="recipe-card red"><h2>Jambalaya</h2><p>A spicy Cajun classic loaded with chicken and sausage.</p></a>
-    <a href="moussaka.html" class="recipe-card red"><h2>Moussaka</h2><p>Greek layers of eggplant, meat sauce, and béchamel.</p></a>
-    <a href="crispy-gnocchi-sausage-broccoli.html" class="recipe-card green"><h2>Crispy Gnocchi with Sausage and Broccoli</h2><p>Sheet-pan gnocchi with sausage and lemon.</p></a>
-    <a href="cheesy-gnocchi.html" class="recipe-card green"><h2>Cheesy Gnocchi with Corn and Pesto</h2><p>Sweet corn, pesto, and melty mozzarella.</p></a>
-    <a href="homemade-four-cheese-ravioli.html" class="recipe-card yellow"><h2>Homemade Four-Cheese Ravioli</h2><p>Ricotta, mozzarella, provolone, and Parmesan pasta pockets.</p></a>
-  </div>
-
+    <a href="./jambalaya.html" style="border-color: darkred">Jambalaya</a>
+    <a href="./moussaka.html" style="border-color: darkred">Moussaka</a>
+    <a href="./crispy-gnocchi-sausage-broccoli.html" style="border-color: green">Crispy Gnocchi with Sausage and Broccoli</a>
+    <a href="./cheesy-gnocchi.html" style="border-color: green">Cheesy Gnocchi with Corn and Pesto</a>
+    <a href="./homemade-four-cheese-ravioli.html" style="border-color: darkkhaki">Homemade Four-Cheese Ravioli</a>
 
   <!-- Side Dishes Section -->
   <h2 class="section-title">🥗 Side Dishes</h2>
-  <div class="recipe-grid">
-    <a href="mushroom-risotto.html" class="recipe-card green"><h2>Instant Pot Mushroom Risotto</h2><p>Perfect creamy side dish.</p></a>
-    <a href="instant-pot-mexican-rice.html" class="recipe-card green"><h2>Instant Pot Mexican Rice</h2><p>Fluffy, flavorful rice with a hint of spice.</p></a>
-    <a href="queso-dip.html" class="recipe-card green"><h2>Queso Dip</h2><p>Warm, creamy cheese dip with a hint of spice.</p></a>
-    <a href="royal-caribbean-mushroom-soup.html" class="recipe-card red"><h2>Royal Caribbean Mushroom Soup</h2><p>Rich, truffle-kissed mushroom soup.</p></a>
-  </div>
+    <a href="./mushroom-risotto.html" style="border-color: green">Instant Pot Mushroom Risotto</a>
+    <a href="./instant-pot-mexican-rice.html" style="border-color: green">Instant Pot Mexican Rice</a>
+    <a href="./queso-dip.html" style="border-color: green">Queso Dip</a>
+    <a href="./royal-caribbean-mushroom-soup.html" style="border-color: darkred">Royal Caribbean Mushroom Soup</a>
 
   <!-- Breads Section -->
   <h2 class="section-title">🍞 Breads & Rolls</h2>
-  <div class="recipe-grid">
-    <a href="sourdough-english-muffins.html" class="recipe-card yellow"><h2>Sourdough English Muffins</h2><p>Soft, tangy, and golden — perfect for breakfast.</p></a>
-    <a href="easy-sourdough-sandwich-bread.html" class="recipe-card yellow"><h2>Sourdough Sandwich Bread</h2><p>Fluffy sourdough sandwich bread for daily use.</p></a>
-    <a href="the-best-dinner-rolls.html" class="recipe-card yellow"><h2>Dinner Rolls</h2><p>Soft, buttery rolls that rise beautifully.</p></a>
-    <a href="garlic-knots.html" class="recipe-card yellow"><h2>Garlic Knots</h2><p>Soft, buttery, and garlicky — perfect with pasta.</p></a>
-    <a href="pretzel-rolls.html" class="recipe-card red"><h2>Pretzel Rolls</h2><p>Soft, chewy rolls with a golden crust.</p></a>
-  </div>
+    <a href="./sourdough-english-muffins.html" style="border-color: darkkhaki">Sourdough English Muffins</a>
+    <a href="./easy-sourdough-sandwich-bread.html" style="border-color: darkkhaki">Sourdough Sandwich Bread</a>
+    <a href="./the-best-dinner-rolls.html" style="border-color: darkkhaki">Dinner Rolls</a>
+    <a href="./garlic-knots.html" style="border-color: darkkhaki">Garlic Knots</a>
+    <a href="./pretzel-rolls.html" style="border-color: darkred">Pretzel Rolls</a>
 
    <!-- Dessert Section -->
   <h2 class="section-title">🍰 Desserts</h2>
-  <div class="recipe-grid">
-    <a href="easy-sugar-cookies.html" class="recipe-card green"><h2>Easy Sugar Cookies</h2><p>Classic buttery sugar cookies with a soft center.</p></a>
-    <a href="pumpkin-crumb-cake.html" class="recipe-card yellow"><h2>Pumpkin Crumb Cake</h2><p>Moist pumpkin cake with buttery streusel and glaze.</p></a>
-  </div>
+    <a href="./easy-sugar-cookies.html" style="border-color: green">Easy Sugar Cookies</a>
+    <a href="./pumpkin-crumb-cake.html" style="border-color: darkkhaki">Pumpkin Crumb Cake</a>
 
-  <!-- Dessert Section -->
+  <!-- Drink Section -->
   <h2 class="section-title">🍸 Drinks</h2>
-  <div class="recipe-grid">
-    <a href="pp-martini.html" class="recipe-card green"><h2>Pumpkin Pie Martini</h2><p>Rum Chata and Vanilla Vodka</p></a>
+    <a href="./pp-martini.html" style="border-color: green">Pumpkin Pie Martini</a>
+
   </div>
 
+  <div class="modal" id="shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="shopping-title">Shopping List</h2>
+        <div>
+          <button class="btn btn-ghost" id="btn-copy">Copy</button>
+          <button class="btn btn-ghost" id="btn-download">Download .txt</button>
+          <button class="btn btn-danger" id="btn-close">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p id="shopping-summary"></p>
+        <ol id="shopping-list" class="list"></ol>
+        <div id="shopping-warnings"></div>
+        <div id="shopping-errors" class="errors"></div>
+      </div>
+    </div>
+  </div>
 
-  <footer>
-    <p>© 2025 David’s Recipe Collection</p>
-  </footer>
+  <script>
+    /* WHY: Sticky header avoids “can’t reach menu while dragging”; auto-scroll lets you scroll during drag. */
+    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const STORAGE_KEY="weeklyMenu.v1";
+    const $=(s,c=document)=>c.querySelector(s);
+    const $$=(s,c=document)=>Array.from(c.querySelectorAll(s));
 
+    const weekGrid=$("#week-grid");
+    const state=loadState();
+    DAYS.forEach(day=>{
+      const wrap=document.createElement("div");
+      wrap.className="day"; wrap.dataset.day=day;
+      wrap.innerHTML=`
+        <div class="day-head">
+          <span>${day}</span>
+          <button class="btn btn-ghost" data-day-clear="${day}" title="Clear ${day}">Clear</button>
+        </div>
+        <div class="day-list" aria-label="${day} menu"></div>`;
+      addDropHandlers(wrap);
+      weekGrid.appendChild(wrap);
+      (state[day]||[]).forEach(r=>addChip(wrap.querySelector(".day-list"),r));
+    });
+
+    weekGrid.addEventListener("click",(e)=>{
+      const btn=e.target.closest("[data-day-clear]"); if(!btn) return;
+      const day=btn.dataset.dayClear;
+      const box=weekGrid.querySelector(`.day[data-day="${day}"] .day-list`);
+      box.innerHTML=""; persist();
+    });
+
+    $("#btn-clear").addEventListener("click",()=>{
+      if(!confirm("Clear the entire weekly menu?")) return;
+      $$(".day-list").forEach(d=>d.innerHTML=""); persist();
+    });
+    $("#btn-save").addEventListener("click",persist);
+    $("#btn-shopping").addEventListener("click",buildShoppingList);
+
+    const modal=$("#shopping-modal");
+    $("#btn-close").addEventListener("click",()=>modal.classList.remove("open"));
+    modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("open"); });
+    $("#btn-copy").addEventListener("click",copyShoppingList);
+    $("#btn-download").addEventListener("click",downloadShoppingList);
+
+    enhanceRecipeLinks();
+
+    function enhanceRecipeLinks(){
+      const anchors=$$('a[href$=".html"]');
+      anchors.forEach(a=>{
+        if(!/\/recipes\/|\.\/.*\.html/i.test(a.getAttribute("href"))) return;
+        a.classList.add("recipe-draggable"); a.setAttribute("draggable","true");
+        a.addEventListener("dragstart",(ev)=>{
+          const href=new URL(a.getAttribute("href"),location.href).toString();
+          const title=(a.textContent||a.getAttribute("title")||"Recipe").trim();
+          ev.dataTransfer.setData("application/json",JSON.stringify({title,href}));
+          ev.dataTransfer.effectAllowed="copy";
+        });
+      });
+    }
+
+    function addDropHandlers(dayElem){
+    dayElem.addEventListener("dragover",(ev)=>{
+      if (!ev.dataTransfer.types.includes("application/json")) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect="copy";
+      dayElem.classList.add("dragover");
+    });
+    dayElem.addEventListener("dragleave",()=>dayElem.classList.remove("dragover"));
+    dayElem.addEventListener("drop",(ev)=>{
+      dayElem.classList.remove("dragover");
+      const raw=ev.dataTransfer.getData("application/json");
+      if(!raw) return;
+      ev.preventDefault();
+      try{
+        const data=JSON.parse(raw);                 // { title, href }
+        const list=dayElem.querySelector(".day-list");
+        addChip(list, data);                        // ✅ always create a .chip
+        persist();
+      }catch{/* ignore */}
+    });
+  }
+  
+  function addChip(listEl, { title, href }){
+    // Avoid duplicate href in same day
+    if (listEl.querySelector(`.chip[data-href="${href}"]`)) return;
+
+    const chip=document.createElement("div");
+    chip.className="chip";
+    chip.dataset.href=href;
+    chip.innerHTML=`
+      <a href="${href}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
+      <span class="x" title="Remove" aria-label="Remove">×</span>
+    `;
+    chip.querySelector(".x").addEventListener("click",()=>{
+      chip.remove(); persist();
+    });
+    listEl.appendChild(chip);
+    enhanceRecipeLinks();
+  }
+
+    function persist(){
+      const data={};
+      $$(".day").forEach(day=>{
+        const name=day.dataset.day; const arr=[];
+        $$(".chip",day).forEach(chip=>{
+          const a=$("a",chip);
+          arr.push({title:a.textContent.trim(),href:new URL(a.getAttribute("href"),location.href).toString()});
+        });
+        data[name]=arr;
+      });
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); flashToolbar();
+    }
+
+    function loadState(){
+      try{
+        const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return Object.fromEntries(DAYS.map(d=>[d,[]]));
+        const obj=JSON.parse(raw); DAYS.forEach(d=>{ if(!obj[d]) obj[d]=[]; }); return obj;
+      }catch{ return Object.fromEntries(DAYS.map(d=>[d,[]])); }
+    }
+
+    function flashToolbar(){
+      const btn=$("#btn-save"); if(!btn) return;
+      const orig=btn.textContent; btn.textContent="Saved"; setTimeout(()=>btn.textContent=orig,800);
+    }
+
+    /* ---------- Same-origin fetch + diagnostics (from prior fix) ---------- */
+    function sameOriginPath(url){
+      const u=new URL(url,location.href);
+      return u.pathname + (u.search||"");
+    }
+    async function fetchHtml(pathname){
+      const res=await fetch(pathname,{credentials:"same-origin",redirect:"follow"});
+      if(!res.ok){ throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`); }
+      return res.text();
+    }
+    async function buildShoppingList(){
+      const selections=collectAllMenuRecipes();
+      if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
+
+      const byPath=new Map();
+      for(const {title,href} of selections){
+        const path=sameOriginPath(href);
+        if(!byPath.has(path)) byPath.set(path,{title,href,path});
+      }
+
+      const results=[]; const warnings=[]; const errors=[];
+      for(const item of byPath.values()){
+        try{
+          const html=await fetchHtml(item.path);
+          const ings=extractIngredientsFromHtml(html);
+          if(!ings || ings.length===0){ warnings.push(`No ingredients found: ${item.title}`); }
+          else{ results.push(...ings); }
+        }catch(err){
+          errors.push(`Fetch failed: ${item.title} → ${item.path} (${err && err.message ? err.message : "unknown error"})`);
+        }
+      }
+
+      const normalized=results.map(t=>normalizeIngredient(t)).filter(Boolean);
+      const uniq=Array.from(new Set(normalized));
+
+      const list=$("#shopping-list"); list.innerHTML="";
+      uniq.forEach(it=>{ const li=document.createElement("li"); li.textContent=it; list.appendChild(li); });
+
+      $("#shopping-summary").textContent=`Collected ${uniq.length} unique ingredients from ${byPath.size} recipe(s).`;
+
+      const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
+      if(warnings.length){
+        const div=document.createElement("div");
+        div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
+        warnBox.appendChild(div);
+      }
+
+      const errBox=$("#shopping-errors"); errBox.innerHTML="";
+      if(errors.length){
+        errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+      }
+
+      modal.classList.add("open");
+    }
+    /* ---------- end fetch block ---------- */
+
+    function collectAllMenuRecipes(){
+      const items=[];
+      $$(".day-list").forEach(list=>{
+        $$(".chip",list).forEach(chip=>{
+          const a=$("a",chip);
+          items.push({title:a.textContent.trim(),href:new URL(a.getAttribute("href"),location.href).toString()});
+        });
+      });
+      return items;
+    }
+
+    function extractIngredientsFromHtml(html){
+      const doc=new DOMParser().parseFromString(html,"text/html");
+      const heading=$$("h1,h2,h3,h4",doc).find(h=>h.textContent.trim().toLowerCase()==="ingredients");
+      if(heading){
+        const out=[]; let el=heading.nextElementSibling;
+        while(el){ if(/^H[1-6]$/i.test(el.tagName)) break;
+          if(el.tagName==="UL"){ $$("li",el).forEach(li=>out.push(li.textContent.trim())); }
+          el=el.nextElementSibling;
+        }
+        if(out.length) return out;
+      }
+      const allUL=$$("ul",doc);
+      if(allUL.length){
+        for(const ul of allUL){
+          const items=$$("li",ul).map(li=>li.textContent.trim()).filter(Boolean);
+          if(items.length>=3){ return items; }
+        }
+      }
+      const anyLi=$$("li",doc).slice(0,50).map(li=>li.textContent.trim()).filter(Boolean);
+      return anyLi.length?anyLi:[];
+    }
+
+    function normalizeIngredient(s){
+      if(!s) return "";
+      s=s.replace(/\u00BD/g,"1/2").replace(/\u00BC/g,"1/4").replace(/\u00BE/g,"3/4")
+         .replace(/\u2153/g,"1/3").replace(/\u2154/g,"2/3").replace(/\u00A0/g," ");
+      s=s.replace(/^[*•\-\u2022]\s*/,"").trim().replace(/\s+/g," ");
+      s=s.replace(/^(~|about\s+)?\d+([\/\.\d]*)?\s*(cups?|tsp|tbsp|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|ml|l|pinch|cloves?|cans?|packages?)\b\.?,?\s*/i,"");
+      return s.toLowerCase();
+    }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    async function copyShoppingList(){
+      const items=$$("#shopping-list li").map(li=>li.textContent);
+      try{ await navigator.clipboard.writeText(items.join("\n")); alert("Shopping list copied."); }
+      catch{ alert("Copy failed; your browser may block clipboard access."); }
+    }
+
+    function downloadShoppingList(){
+      const items=$$("#shopping-list li").map(li=>li.textContent);
+      const blob=new Blob([items.join("\n")+"\n"],{type:"text/plain"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="shopping-list.txt";
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+
+    /* ---- Drag auto-scroll near viewport edges (smooth while dragging) ---- */
+    let autoScrollInterval=null;
+    document.addEventListener("dragover",(e)=>{
+      const EDGE=60, SPEED=20;               // why: smooth control
+      const y=e.clientY, h=window.innerHeight;
+      clearInterval(autoScrollInterval);
+      if(y<EDGE){
+        autoScrollInterval=setInterval(()=>window.scrollBy({top:-SPEED,behavior:"auto"}),16);
+      }else if(y>h-EDGE){
+        autoScrollInterval=setInterval(()=>window.scrollBy({top:SPEED,behavior:"auto"}),16);
+      }
+    });
+    document.addEventListener("dragleave",()=>{ clearInterval(autoScrollInterval); });
+    document.addEventListener("drop",()=>{ clearInterval(autoScrollInterval); });
+    /* --------------------------------------------------------------------- */
+  </script>
 </body>
 </html>
