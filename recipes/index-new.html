@@ -1,0 +1,323 @@
+<!-- /recipes/index.html — drop-in file with robust fetch + diagnostics -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>David’s Recipe Collection — Weekly Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0f172a;--panel:#111827;--muted:#1f2937;--border:#374151;--text:#e5e7eb;
+      --accent:#60a5fa;--accent-2:#34d399;--warn:#f59e0b;--danger:#ef4444;--chip:#0b1224
+    }
+    html,body{background:var(--bg);color:var(--text);margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+    .container{max-width:1100px;margin:0 auto;padding:24px 16px}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .header h1{margin:0;font-size:24px}
+    .menu-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,.25)}
+    .menu-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .btn{cursor:pointer;border:1px solid var(--border);background:linear-gradient(180deg,#111827,#0b1020);color:var(--text);padding:8px 12px;border-radius:10px;font-weight:600;transition:transform .05s}
+    .btn:hover{transform:translateY(-1px)} .btn-primary{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+    .btn-danger{border-color:var(--danger);color:#fecaca} .btn-ghost{background:transparent}
+    .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+    .day{background:var(--muted);border:1px dashed var(--border);border-radius:12px;min-height:120px;padding:10px;display:flex;flex-direction:column}
+    .day.dragover{outline:2px dashed var(--accent);outline-offset:-6px}
+    .day-head{font-weight:700;font-size:14px;opacity:.9;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .day-list{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--border);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+    .chip a{color:var(--text);text-decoration:none}
+    .chip .x{cursor:pointer;width:18px;height:18px;border-radius:999px;display:grid;place-items:center;border:1px solid var(--border);background:#0a0f1f;font-weight:700;line-height:1;opacity:.85}
+    .chip .x:hover{background:#091229}
+    .recipe-draggable{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 4px;background:#0b1020;cursor:grab;user-select:none}
+    .recipe-draggable:active{cursor:grabbing} .recipe-draggable small{display:block;opacity:.75}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:50}
+    .modal.open{display:flex}
+    .modal-card{width:min(800px,92vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .modal-body{font-size:15px}
+    .list{columns:2;column-gap:24px} .list li{break-inside:avoid;margin:2px 0}
+    .warn{color:var(--warn)} .sr-only{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+    .errors{margin-top:8px;font-size:13px;opacity:.9}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>David’s Recipe Collection</h1>
+    </div>
+
+    <section aria-label="Weekly Menu Planner" class="menu-panel" id="menu-planner">
+      <div class="menu-toolbar">
+        <strong>Weekly Menu</strong>
+        <button class="btn btn-primary" id="btn-shopping">Shopping List</button>
+        <button class="btn" id="btn-save">Save</button>
+        <button class="btn btn-danger" id="btn-clear">Clear Menu</button>
+        <span style="opacity:.7;font-size:13px">Tip: drag any recipe below into a day.</span>
+      </div>
+      <div class="week-grid" id="week-grid" aria-describedby="drag-help"></div>
+      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip to remove.</p>
+    </section>
+
+    <!-- Keep your existing recipe markup below; links get enhanced automatically. -->
+    <h2>️ Dinners</h2>
+    <h3>Chicken Dinners</h3>
+    <p>
+      <a href="./chicken-rice-casserole.html">Chicken and Rice Casserole</a>
+      <a href="./chicken-mushroom-stroganoff.html">Chicken and Mushroom Stroganoff</a>
+      <a href="./chicken-tikka-masala.html">Chicken Tikka Masala</a>
+    </p>
+  </div>
+
+  <div class="modal" id="shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="shopping-title">Shopping List</h2>
+        <div>
+          <button class="btn btn-ghost" id="btn-copy">Copy</button>
+          <button class="btn btn-ghost" id="btn-download">Download .txt</button>
+          <button class="btn btn-danger" id="btn-close">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p id="shopping-summary"></p>
+        <ol id="shopping-list" class="list"></ol>
+        <div id="shopping-warnings"></div>
+        <div id="shopping-errors" class="errors"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* WHY: Avoid cross-origin/redirect fetch issues by forcing same-origin path fetches and surfacing HTTP errors. */
+    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const STORAGE_KEY="weeklyMenu.v1";
+    const $=(s,c=document)=>c.querySelector(s);
+    const $$=(s,c=document)=>Array.from(c.querySelectorAll(s));
+
+    const weekGrid=$("#week-grid");
+    const state=loadState();
+    DAYS.forEach(day=>{
+      const wrap=document.createElement("div");
+      wrap.className="day"; wrap.dataset.day=day;
+      wrap.innerHTML=`
+        <div class="day-head">
+          <span>${day}</span>
+          <button class="btn btn-ghost" data-day-clear="${day}" title="Clear ${day}">Clear</button>
+        </div>
+        <div class="day-list" aria-label="${day} menu"></div>`;
+      addDropHandlers(wrap);
+      weekGrid.appendChild(wrap);
+      (state[day]||[]).forEach(r=>addChip(wrap.querySelector(".day-list"),r));
+    });
+
+    weekGrid.addEventListener("click",(e)=>{
+      const btn=e.target.closest("[data-day-clear]"); if(!btn) return;
+      const day=btn.dataset.dayClear;
+      const box=weekGrid.querySelector(`.day[data-day="${day}"] .day-list`);
+      box.innerHTML=""; persist();
+    });
+
+    $("#btn-clear").addEventListener("click",()=>{
+      if(!confirm("Clear the entire weekly menu?")) return;
+      $$(".day-list").forEach(d=>d.innerHTML=""); persist();
+    });
+    $("#btn-save").addEventListener("click",persist);
+    $("#btn-shopping").addEventListener("click",buildShoppingList);
+
+    const modal=$("#shopping-modal");
+    $("#btn-close").addEventListener("click",()=>modal.classList.remove("open"));
+    modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("open"); });
+    $("#btn-copy").addEventListener("click",copyShoppingList);
+    $("#btn-download").addEventListener("click",downloadShoppingList);
+
+    enhanceRecipeLinks();
+
+    function enhanceRecipeLinks(){
+      const anchors=$$('a[href$=".html"]');
+      anchors.forEach(a=>{
+        if(!/\/recipes\/|\.\/.*\.html/i.test(a.getAttribute("href"))) return;
+        a.classList.add("recipe-draggable"); a.setAttribute("draggable","true");
+        a.addEventListener("dragstart",(ev)=>{
+          const href=new URL(a.getAttribute("href"),location.href).toString();
+          const title=(a.textContent||a.getAttribute("title")||"Recipe").trim();
+          ev.dataTransfer.setData("application/json",JSON.stringify({title,href}));
+          ev.dataTransfer.effectAllowed="copy";
+        });
+      });
+    }
+
+    function addDropHandlers(dayElem){
+      dayElem.addEventListener("dragover",(ev)=>{
+        const ok=ev.dataTransfer.types.includes("application/json"); if(!ok) return;
+        ev.preventDefault(); ev.dataTransfer.dropEffect="copy"; dayElem.classList.add("dragover");
+      });
+      dayElem.addEventListener("dragleave",()=>dayElem.classList.remove("dragover"));
+      dayElem.addEventListener("drop",(ev)=>{
+        dayElem.classList.remove("dragover");
+        const raw=ev.dataTransfer.getData("application/json"); if(!raw) return;
+        ev.preventDefault();
+        try{
+          const data=JSON.parse(raw);
+          const list=dayElem.querySelector(".day-list");
+          addChip(list,data); persist();
+        }catch{}
+      });
+    }
+
+    function addChip(listEl,{title,href}){
+      const exists=$(`.chip[data-href="${href}"]`,listEl); if(exists) return;
+      const chip=document.createElement("div"); chip.className="chip"; chip.dataset.href=href;
+      chip.innerHTML=`<a href="${href}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
+                      <span class="x" title="Remove" aria-label="Remove">×</span>`;
+      chip.querySelector(".x").addEventListener("click",()=>{ chip.remove(); persist(); });
+      listEl.appendChild(chip);
+    }
+
+    function persist(){
+      const data={};
+      $$(".day").forEach(day=>{
+        const name=day.dataset.day; const arr=[];
+        $$(".chip",day).forEach(chip=>{
+          const a=$("a",chip);
+          arr.push({title:a.textContent.trim(),href:new URL(a.getAttribute("href"),location.href).toString()});
+        });
+        data[name]=arr;
+      });
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); flashToolbar();
+    }
+
+    function loadState(){
+      try{
+        const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return Object.fromEntries(DAYS.map(d=>[d,[]]));
+        const obj=JSON.parse(raw); DAYS.forEach(d=>{ if(!obj[d]) obj[d]=[]; }); return obj;
+      }catch{ return Object.fromEntries(DAYS.map(d=>[d,[]])); }
+    }
+
+    function flashToolbar(){
+      const btn=$("#btn-save"); if(!btn) return;
+      const orig=btn.textContent; btn.textContent="Saved"; setTimeout(()=>btn.textContent=orig,800);
+    }
+
+    /* ---------- FIXED: robust fetch path + diagnostics ---------- */
+    function sameOriginPath(url){
+      const u=new URL(url,location.href);
+      // why: avoid cross-origin redirects by stripping origin; fetch as path from current origin
+      return u.pathname + (u.search||"");
+    }
+
+    async function fetchHtml(pathname){
+      const res=await fetch(pathname,{credentials:"same-origin",redirect:"follow"});
+      if(!res.ok){
+        // why: surface HTTP status to debug (403/404/301 loops, etc.)
+        throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`);
+      }
+      return res.text();
+    }
+
+    async function buildShoppingList(){
+      const selections=collectAllMenuRecipes();
+      if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
+
+      const byPath=new Map();
+      for(const {title,href} of selections){
+        const path=sameOriginPath(href);
+        if(!byPath.has(path)) byPath.set(path,{title,href,path});
+      }
+
+      const results=[]; const warnings=[]; const errors=[];
+      for(const item of byPath.values()){
+        try{
+          const html=await fetchHtml(item.path);
+          const ings=extractIngredientsFromHtml(html);
+          if(!ings || ings.length===0){ warnings.push(`No ingredients found: ${item.title}`); }
+          else{ results.push(...ings); }
+        }catch(err){
+          errors.push(`Fetch failed: ${item.title} → ${item.path} (${err && err.message ? err.message : "unknown error"})`);
+        }
+      }
+
+      const normalized=results.map(t=>normalizeIngredient(t)).filter(Boolean);
+      const uniq=Array.from(new Set(normalized));
+
+      const list=$("#shopping-list"); list.innerHTML="";
+      uniq.forEach(it=>{ const li=document.createElement("li"); li.textContent=it; list.appendChild(li); });
+
+      $("#shopping-summary").textContent=`Collected ${uniq.length} unique ingredients from ${byPath.size} recipe(s).`;
+
+      const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
+      if(warnings.length){
+        const div=document.createElement("div");
+        div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
+        warnBox.appendChild(div);
+      }
+
+      const errBox=$("#shopping-errors"); errBox.innerHTML="";
+      if(errors.length){
+        errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>
+          <p style="opacity:.8">Tip: If these are 301/302 to another domain or 403s, forcing same-origin <code>pathname</code> fetches usually fixes it. Ensure each recipe HTML is publicly readable on the same Amplify domain.</p>`;
+      }
+
+      modal.classList.add("open");
+    }
+    /* ---------- end fixed block ---------- */
+
+    function collectAllMenuRecipes(){
+      const items=[];
+      $$(".day-list").forEach(list=>{
+        $$(".chip",list).forEach(chip=>{
+          const a=$("a",chip);
+          items.push({title:a.textContent.trim(),href:new URL(a.getAttribute("href"),location.href).toString()});
+        });
+      });
+      return items;
+    }
+
+    function extractIngredientsFromHtml(html){
+      const doc=new DOMParser().parseFromString(html,"text/html");
+      const heading=$$("h1,h2,h3,h4",doc).find(h=>h.textContent.trim().toLowerCase()==="ingredients");
+      if(heading){
+        const out=[]; let el=heading.nextElementSibling;
+        while(el){ if(/^H[1-6]$/i.test(el.tagName)) break;
+          if(el.tagName==="UL"){ $$("li",el).forEach(li=>out.push(li.textContent.trim())); }
+          el=el.nextElementSibling;
+        }
+        if(out.length) return out;
+      }
+      const allUL=$$("ul",doc);
+      if(allUL.length){
+        for(const ul of allUL){
+          const items=$$("li",ul).map(li=>li.textContent.trim()).filter(Boolean);
+          if(items.length>=3){ return items; }
+        }
+      }
+      const anyLi=$$("li",doc).slice(0,50).map(li=>li.textContent.trim()).filter(Boolean);
+      return anyLi.length?anyLi:[];
+    }
+
+    function normalizeIngredient(s){
+      if(!s) return "";
+      s=s.replace(/\u00BD/g,"1/2").replace(/\u00BC/g,"1/4").replace(/\u00BE/g,"3/4")
+         .replace(/\u2153/g,"1/3").replace(/\u2154/g,"2/3").replace(/\u00A0/g," ");
+      s=s.replace(/^[*•\-\u2022]\s*/,"").trim().replace(/\s+/g," ");
+      s=s.replace(/^(~|about\s+)?\d+([\/\.\d]*)?\s*(cups?|tsp|tbsp|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|ml|l|pinch|cloves?|cans?|packages?)\b\.?,?\s*/i,"");
+      return s.toLowerCase();
+    }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    async function copyShoppingList(){
+      const items=$$("#shopping-list li").map(li=>li.textContent);
+      try{ await navigator.clipboard.writeText(items.join("\n")); alert("Shopping list copied."); }
+      catch{ alert("Copy failed; your browser may block clipboard access."); }
+    }
+
+    function downloadShoppingList(){
+      const items=$$("#shopping-list li").map(li=>li.textContent);
+      const blob=new Blob([items.join("\n")+"\n"],{type:"text/plain"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="shopping-list.txt";
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>
