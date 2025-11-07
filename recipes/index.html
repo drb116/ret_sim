@@ -164,7 +164,7 @@
         <h2 id="shopping-title">Shopping List</h2>
         <div>
           <button class="btn btn-ghost" id="btn-copy">Copy</button>
-          <button class="btn btn-ghost" id="btn-download">Download .txt</button>
+          <!-- <button class="btn btn-ghost" id="btn-download">Download .txt</button> -->
           <button class="btn btn-danger" id="btn-close">Close</button>
         </div>
       </div>
@@ -312,7 +312,9 @@
       return res.text();
     }
     // 1) Pantry list (case-insensitive)
-  const PANTRY = ["salt", "oregano", "garlic"];
+  const PANTRY = ["salt", "oregano", "garlic", "basil", "parsley", "vegetable oil", "olive oil",
+    "cornstarch", "white sugar", "taco seasoning", "chicken broth", "boiling water", "black pepper"
+  ];
 
   // 2) Helper: does an ingredient line contain a pantry item? (word-boundary match)
   function isPantryItem(text) {
