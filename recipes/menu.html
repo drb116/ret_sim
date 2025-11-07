@@ -1,4 +1,4 @@
-<!-- /recipes/index.html — drop-in file with robust fetch + diagnostics -->
+<!-- /recipes/index.html — sticky planner + drag autoscroll -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,14 +8,27 @@
   <style>
     :root{
       --bg:#0f172a;--panel:#111827;--muted:#1f2937;--border:#374151;--text:#e5e7eb;
-      --accent:#60a5fa;--accent-2:#34d399;--warn:#f59e0b;--danger:#ef4444;--chip:#0b1224
+      --accent:#ffffff;--accent-2:#34d399;--warn:#f59e0b;--danger:#ef4444;--chip:#0b1224
     }
     html,body{background:var(--bg);color:var(--text);margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
     a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
     .container{max-width:1100px;margin:0 auto;padding:24px 16px}
     .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
     .header h1{margin:0;font-size:24px}
-    .menu-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,.25)}
+
+    /* Sticky Weekly Menu */
+    .menu-panel{
+      position: sticky;         /* stays visible during scroll */
+      top: 0;                   /* pin to top */
+      z-index: 100;             /* above content while dragging */
+      background: var(--panel); /* solid to ensure chip visibility */
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      backdrop-filter: saturate(1.1);
+      margin-bottom: 16px;
+    }
     .menu-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
     .btn{cursor:pointer;border:1px solid var(--border);background:linear-gradient(180deg,#111827,#0b1020);color:var(--text);padding:8px 12px;border-radius:10px;font-weight:600;transition:transform .05s}
     .btn:hover{transform:translateY(-1px)} .btn-primary{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
@@ -25,13 +38,16 @@
     .day.dragover{outline:2px dashed var(--accent);outline-offset:-6px}
     .day-head{font-weight:700;font-size:14px;opacity:.9;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
     .day-list{display:flex;flex-wrap:wrap;gap:6px}
+
     .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--border);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:13px}
     .chip a{color:var(--text);text-decoration:none}
     .chip .x{cursor:pointer;width:18px;height:18px;border-radius:999px;display:grid;place-items:center;border:1px solid var(--border);background:#0a0f1f;font-weight:700;line-height:1;opacity:.85}
     .chip .x:hover{background:#091229}
+
     .recipe-draggable{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 4px;background:#0b1020;cursor:grab;user-select:none}
     .recipe-draggable:active{cursor:grabbing} .recipe-draggable small{display:block;opacity:.75}
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:50}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:200}
     .modal.open{display:flex}
     .modal-card{width:min(800px,92vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
     .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -47,6 +63,7 @@
       <h1>David’s Recipe Collection</h1>
     </div>
 
+    <!-- Sticky Weekly Menu -->
     <section aria-label="Weekly Menu Planner" class="menu-panel" id="menu-planner">
       <div class="menu-toolbar">
         <strong>Weekly Menu</strong>
@@ -59,14 +76,73 @@
       <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip to remove.</p>
     </section>
 
-    <!-- Keep your existing recipe markup below; links get enhanced automatically. -->
-    <h2>️ Dinners</h2>
-    <h3>Chicken Dinners</h3>
-    <p>
-      <a href="./chicken-rice-casserole.html">Chicken and Rice Casserole</a>
-      <a href="./chicken-mushroom-stroganoff.html">Chicken and Mushroom Stroganoff</a>
-      <a href="./chicken-tikka-masala.html">Chicken Tikka Masala</a>
-    </p>
+    <!-- Your existing recipe content below; links get enhanced. -->
+    <!-- Dinners Section -->
+  <h2 class="section-title">🍽️ Dinners</h2>
+
+  <!-- 🐔 Chicken Dinners -->
+  <h3>Chicken Dinners</h3>
+  <p>
+    <a href="./chicken-rice-casserole.html" style="border-color:green">Chicken and Rice Casserole</a>
+    <a href="./chicken-stroganoff.html" style="border-color:darkkhaki">Chicken and Mushroom Stroganoff</a>
+    <a href="./chicken-tikka-masala.html" style="border-color: darkred">Chicken Tikka Masala</a>
+    <a href="./asian-orange-chicken.html" style="border-color: darkred">Asian Orange Chicken</a>
+    <a href="./chicken-stir-fry.html" style="border-color: green">Chicken Stir-Fry</a>
+    <a href="./instant-pot-chicken-risotto.html" style="border-color: darkkhaki">Instant Pot Chicken Risotto</a>
+    <a href="./pad-prik-king.html" style="border-color:  darkkhaki">Pad Prik King</a>
+    <a href="./instant-pot-butter-chicken.html" style="border-color: darkkhaki">Instant Pot Butter Chicken</a>
+    <a href="./crispy-pepperoni-chicken.html" style="border-color:green">Crispy Pepperoni Chicken</a>
+    <a href="./chicken-korma.html" style="border-color: darkkhaki">Chicken Korma</a>
+    <a href="./quick-chicken-and-stuffing-casserole.html" style="border-color: green">Chicken and Stuffing Casserole</a>
+  </p>
+
+  <!-- 🐄 Beef Dinners -->
+  <h3>Beef Dinners</h3>
+    <a href="./grandmas-casserole.html" style="border-color:darkred">Grandma’s Casserole</a>
+    <a href="./beef-enchiladas.html" style="border-color:darkkhaki">Beef Enchiladas</a>
+    <a href="./ground-beef-spinach-casserole.html" style="border-color:darkkhaki">Ground Beef and Spinach Casserole</a>
+    <a href="./hamburger-potato-casserole.html" style="border-color:darkkhaki">Hamburger Potato Casserole</a>
+    <a href="./easy-korean-ground-beef-bowl.html" style="border-color:green">Easy Korean Ground Beef Bowl</a>
+    <a href="./lasagna.html" style="border-color:darkred">World’s Best Lasagna</a>
+    <a href="./shepherds-pie-vi.html" style="border-color:darkkhaki">Shepherd’s Pie</a>
+    <a href="./taco-bake-casserole.html" style="border-color:green">Taco Bake Casserole</a>
+    <a href="./one-pot-ground-beef-stroganoff.html" style="border-color:green">One-Pot Ground Beef Stroganoff</a>
+    <a href="./spicy-creamy-weeknight-bolognese.html" style="border-color:darkkhaki">Spicy Creamy Weeknight Bolognese</a>
+    <a href="./smothered-hamburger-steak.html" style="border-color:green">Smothered Hamburger Steak</a>
+    <a href="./slow-ooker-chili.html" style="border-color:darkred">Slow Cooker Chili</a>
+
+  <!-- 🍲 Other Dinners -->
+  <h3>Other Dinners</h3>
+    <a href="./jambalaya.html" style="border-color: darkred">Jambalaya</a>
+    <a href="./moussaka.html" style="border-color: darkred">Moussaka</a>
+    <a href="./crispy-gnocchi-sausage-broccoli.html" style="border-color: green">Crispy Gnocchi with Sausage and Broccoli</a>
+    <a href="./cheesy-gnocchi.html" style="border-color: green">Cheesy Gnocchi with Corn and Pesto</a>
+    <a href="./homemade-four-cheese-ravioli.html" style="border-color: darkkhaki">Homemade Four-Cheese Ravioli</a>
+
+  <!-- Side Dishes Section -->
+  <h2 class="section-title">🥗 Side Dishes</h2>
+    <a href="./mushroom-risotto.html" style="border-color: green">Instant Pot Mushroom Risotto</a>
+    <a href="./instant-pot-mexican-rice.html" style="border-color: green">Instant Pot Mexican Rice</a>
+    <a href="./queso-dip.html" style="border-color: green">Queso Dip</a>
+    <a href="./royal-caribbean-mushroom-soup.html" style="border-color: darkred">Royal Caribbean Mushroom Soup</a>
+
+  <!-- Breads Section -->
+  <h2 class="section-title">🍞 Breads & Rolls</h2>
+    <a href="./sourdough-english-muffins.html" style="border-color: darkkhaki">Sourdough English Muffins</a>
+    <a href="./easy-sourdough-sandwich-bread.html" style="border-color: darkkhaki">Sourdough Sandwich Bread</a>
+    <a href="./the-best-dinner-rolls.html" style="border-color: darkkhaki">Dinner Rolls</a>
+    <a href="./garlic-knots.html" style="border-color: darkkhaki">Garlic Knots</a>
+    <a href="./pretzel-rolls.html" style="border-color: darkred">Pretzel Rolls</a>
+
+   <!-- Dessert Section -->
+  <h2 class="section-title">🍰 Desserts</h2>
+    <a href="./easy-sugar-cookies.html" style="border-color: green">Easy Sugar Cookies</a>
+    <a href="./pumpkin-crumb-cake.html" style="border-color: darkkhaki">Pumpkin Crumb Cake</a>
+
+  <!-- Drink Section -->
+  <h2 class="section-title">🍸 Drinks</h2>
+    <a href="./pp-martini.html" style="border-color: green">Pumpkin Pie Martini</a>
+
   </div>
 
   <div class="modal" id="shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-title">
@@ -89,7 +165,7 @@
   </div>
 
   <script>
-    /* WHY: Avoid cross-origin/redirect fetch issues by forcing same-origin path fetches and surfacing HTTP errors. */
+    /* WHY: Sticky header avoids “can’t reach menu while dragging”; auto-scroll lets you scroll during drag. */
     const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     const STORAGE_KEY="weeklyMenu.v1";
     const $=(s,c=document)=>c.querySelector(s);
@@ -199,22 +275,16 @@
       const orig=btn.textContent; btn.textContent="Saved"; setTimeout(()=>btn.textContent=orig,800);
     }
 
-    /* ---------- FIXED: robust fetch path + diagnostics ---------- */
+    /* ---------- Same-origin fetch + diagnostics (from prior fix) ---------- */
     function sameOriginPath(url){
       const u=new URL(url,location.href);
-      // why: avoid cross-origin redirects by stripping origin; fetch as path from current origin
       return u.pathname + (u.search||"");
     }
-
     async function fetchHtml(pathname){
       const res=await fetch(pathname,{credentials:"same-origin",redirect:"follow"});
-      if(!res.ok){
-        // why: surface HTTP status to debug (403/404/301 loops, etc.)
-        throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`);
-      }
+      if(!res.ok){ throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`); }
       return res.text();
     }
-
     async function buildShoppingList(){
       const selections=collectAllMenuRecipes();
       if(selections.length===0){ alert("No recipes in the weekly menu yet."); return; }
@@ -254,13 +324,12 @@
 
       const errBox=$("#shopping-errors"); errBox.innerHTML="";
       if(errors.length){
-        errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>
-          <p style="opacity:.8">Tip: If these are 301/302 to another domain or 403s, forcing same-origin <code>pathname</code> fetches usually fixes it. Ensure each recipe HTML is publicly readable on the same Amplify domain.</p>`;
+        errBox.innerHTML=`<p class="warn">Errors (fetch):</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
       }
 
       modal.classList.add("open");
     }
-    /* ---------- end fixed block ---------- */
+    /* ---------- end fetch block ---------- */
 
     function collectAllMenuRecipes(){
       const items=[];
@@ -318,6 +387,22 @@
       const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="shopping-list.txt";
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
     }
+
+    /* ---- Drag auto-scroll near viewport edges (smooth while dragging) ---- */
+    let autoScrollInterval=null;
+    document.addEventListener("dragover",(e)=>{
+      const EDGE=60, SPEED=20;               // why: smooth control
+      const y=e.clientY, h=window.innerHeight;
+      clearInterval(autoScrollInterval);
+      if(y<EDGE){
+        autoScrollInterval=setInterval(()=>window.scrollBy({top:-SPEED,behavior:"auto"}),16);
+      }else if(y>h-EDGE){
+        autoScrollInterval=setInterval(()=>window.scrollBy({top:SPEED,behavior:"auto"}),16);
+      }
+    });
+    document.addEventListener("dragleave",()=>{ clearInterval(autoScrollInterval); });
+    document.addEventListener("drop",()=>{ clearInterval(autoScrollInterval); });
+    /* --------------------------------------------------------------------- */
   </script>
 </body>
 </html>
