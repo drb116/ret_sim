@@ -317,10 +317,7 @@
   // 2) Helper: does an ingredient line contain a pantry item? (word-boundary match)
   function isPantryItem(text) {
     const t = (text || "").toLowerCase();
-    return PANTRY.some(p => {
-      const rx = new RegExp(`(^|\\b)${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\b|$)`, "i");
-      return rx.test(t);
-    });
+    return PANTRY.some(p => t.includes(p.toLowerCase()));
   }
 
     // async function buildShoppingList(){
