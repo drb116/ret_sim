@@ -1,13 +1,11 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <title>David’s Recipe Collection — Weekly Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="index-style.css" />
 </head>
-
 <body>
   <div class="container">
     <div class="header">
@@ -16,17 +14,23 @@
 
     <section aria-label="Weekly Menu Planner" class="menu-panel" id="menu-planner">
       <div class="menu-toolbar">
-        <strong>Weekly Menu</strong>
-        <button class="btn btn-primary" id="btn-shopping">Shopping List</button>
-        <button class="btn" id="btn-save">Save</button>
-        <button class="btn btn-danger" id="btn-clear">Clear Menu</button>
-      </div>
-      <div class="week-grid" id="week-grid" aria-describedby="drag-help"></div>
-      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip
-        to remove.</p>
-    </section>
+        <button class="btn nav-btn nav-prev" id="btn-prev-week" title="Previous Week" aria-label="Previous Week">◀</button>
 
-    <h2 class="section-title">🍽️ Dinners</h2>
+        <strong id="week-title">Weekly Menu</strong>
+
+        <div class="toolbar-actions">
+          <button class="btn" id="btn-this-week" title="Jump to this week" aria-label="This Week">This Week</button>
+          <button class="btn btn-primary" id="btn-shopping">Shopping List</button>
+          <button class="btn" id="btn-save">Save</button>
+          <button class="btn btn-danger" id="btn-clear">Clear Menu</button>
+          <button class="btn nav-btn nav-next" id="btn-next-week" title="Next Week" aria-label="Next Week">▶</button>
+        </div>
+      </div>
+
+      <div class="week-grid" id="week-grid" aria-describedby="drag-help"></div>
+      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip to remove.</p>
+    </section>
+<h2 class="section-title">🍽️ Dinners</h2>
     <h3>Chicken Dinners</h3>
     <p>
       <a href="./chicken-rice-casserole.html" style="border-color:green">Chicken and Rice Casserole</a>
@@ -45,7 +49,7 @@
       <a href="./cheesy-chicken-parmesan-meatballs.html" style="border-color: darkkhaki">Chicken Parmesan Meatballs</a>
       <a href="./chicken-divan.html" style="border-color:darkkhaki">Chicken Divan</a>
       <a href="./chinese-chicken-casserole.html" style="border-color:green">Chinese Chicken Casserole</a>
-      <a href="./chicken-enchilada .html" style="border-color:darkkhaki">Chicken Enchilada</a>
+      <a href="./chicken-enchilada.html" style="border-color:darkkhaki">Chicken Enchilada</a>
     </p>
 
     <h3>Beef Dinners</h3>
@@ -127,7 +131,7 @@
       </div>
     </div>
   </div>
+
   <script src="handler.js"></script>
 </body>
-
 </html>
