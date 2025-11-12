@@ -1,99 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <title>David’s Recipe Collection — Weekly Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#0f172a;--panel:#111827;--muted:#1f2937;--border:#374151;--text:#e5e7eb;
-      --accent:#ffffff;--accent-2:#34d399;--warn:#f59e0b;--danger:#ef4444;--chip:#0b1224
-    }
-    html,body{background:var(--bg);color:var(--text);margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
-    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
-    .container{max-width:1100px;margin:0 auto;padding:24px 16px}
-    .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-    .header h1{margin:0;font-size:24px}
-
-    .menu-panel{
-      position: sticky; top: 0; z-index: 100;
-      background: var(--panel); border:1px solid var(--border);
-      border-radius:14px; padding:16px; box-shadow: 0 8px 20px rgba(0,0,0,.35);
-      backdrop-filter: saturate(1.1); margin-bottom: 16px;
-    }
-    .menu-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-    .btn{cursor:pointer;border:1px solid var(--border);background:linear-gradient(180deg,#111827,#0b1020);color:var(--text);padding:8px 12px;border-radius:10px;font-weight:600;transition:transform .05s}
-    .btn:hover{transform:translateY(-1px)} .btn-primary{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-    .btn-danger{border-color:var(--danger);color:#fecaca} .btn-ghost{background:transparent}
-    .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
-    .day{background:var(--muted);border:1px dashed var(--border);border-radius:12px;min-height:120px;padding:10px;display:flex;flex-direction:column}
-    .day.dragover{outline:2px dashed var(--accent);outline-offset:-6px}
-    .day-head{font-weight:700;font-size:14px;opacity:.9;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-    .day-actions{display:flex;gap:6px}
-
-    .day-list{display:flex;flex-wrap:wrap;gap:6px}
-
-    /* text-only chip (recipes) */
-    .chip{
-      position:relative; display:inline-flex; align-items:flex-start; gap:6px;
-      padding:2px 2px 2px 0;
-      background:transparent; border:0; border-radius:0;
-      white-space:normal; overflow-wrap:anywhere; word-break:break-word;
-      max-width:100%; font-size:14px; line-height:1.35;
-    }
-    .chip a{ color:var(--text); text-decoration:none }
-    .chip a:hover{ text-decoration:underline }
-    .chip .x{
-      position:absolute; top:1px; right:-1px;
-      width:18px; height:18px; border-radius:50%;
-      display:grid; place-items:center; border:1px solid var(--border);
-      background:#0a0f1f; color:var(--text); font-weight:700; line-height:1; opacity:.85;
-      cursor:pointer;
-    }
-    .chip .x:hover{ background:#101735 }
-
-    /* note chip */
-    .chip-note .note-text{ font-style:italic; opacity:.95; }
-    .chip-note::before{ content:"📝 "; opacity:.9; }
-    .chip-note{
-      line-height: 1.2;
-      padding: 6px 28px 6px 0; /* more inner space; room for the × */
-    }
-    .chip-note .x{
-      top: -2px;               /* keep corner button out of the text */
-      right: -2px;
-    }
-
-    .recipe-draggable{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 4px;background:#0b1020;cursor:grab;user-select:none}
-    .recipe-draggable:active{cursor:grabbing}
-
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:200}
-    .modal.open{display:flex}
-    .modal-card{width:min(800px,92vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
-    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-    .modal-body{font-size:15px}
-    .list{columns:2;column-gap:24px} .list li{break-inside:avoid;margin:2px 0}
-    .warn{color:var(--warn)} .sr-only{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
-    .errors{margin-top:8px;font-size:13px;opacity:.9}
-
-      .day-actions [data-day-note]{
-    padding: 2px 6px;      /* was 8px 12px */
-    font-size: 12px;       /* smaller text */
-    border-radius: 6px;    /* tighter corner */
-    line-height: 1.2;      /* less vertical height */
-  }
-
-  /* Optional: make it look more link-like */
-  .day-actions [data-day-note].btn.btn-ghost{
-    border-color: transparent;
-    background: transparent;
-  }
-
-  /* Optional: reduce header spacing a bit */
-  .day-head{ margin-bottom: 6px; }
-  .day-actions{ gap: 4px; }
-  </style>
+  <link rel="stylesheet" href="index-style.css" />
 </head>
+
 <body>
   <div class="container">
     <div class="header">
@@ -108,34 +22,33 @@
         <button class="btn btn-danger" id="btn-clear">Clear Menu</button>
       </div>
       <div class="week-grid" id="week-grid" aria-describedby="drag-help"></div>
-      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip to remove.</p>
+      <p id="drag-help" class="sr-only">Drag a recipe link and drop it into a day to add. Use Delete button on each chip
+        to remove.</p>
     </section>
-    <!-- Dinners Section -->
-  <h2 class="section-title">🍽️ Dinners</h2>
 
-  <!-- 🐔 Chicken Dinners -->
-  <h3>Chicken Dinners</h3>
-  <p>
-    <a href="./chicken-rice-casserole.html" style="border-color:green">Chicken and Rice Casserole</a>
-    <a href="./chicken-wild-rice-casserole.html" style="border-color:darkkhaki">Chicken and Wild Rice (Obe)</a>
-    <a href="./chicken-stroganoff.html" style="border-color:darkkhaki">Chicken and Mushroom Stroganoff</a>
-    <a href="./chicken-tikka-masala.html" style="border-color: darkred">Chicken Tikka Masala</a>
-    <a href="./asian-orange-chicken.html" style="border-color: darkred">Asian Orange Chicken</a>
-    <a href="./chicken-stir-fry.html" style="border-color: green">Chicken Stir-Fry</a>
-    <a href="./instant-pot-chicken-risotto.html" style="border-color: darkkhaki">Instant Pot Chicken Risotto</a>
-    <a href="./pad-prik-king.html" style="border-color:  darkkhaki">Pad Prik King</a>
-    <a href="./instant-pot-butter-chicken.html" style="border-color: darkkhaki">Instant Pot Butter Chicken</a>
-    <a href="./crispy-pepperoni-chicken.html" style="border-color:green">Crispy Pepperoni Chicken</a>
-    <a href="./chicken-korma.html" style="border-color: darkkhaki">Chicken Korma</a>
-    <a href="./quick-chicken-and-stuffing-casserole.html" style="border-color: green">Chicken and Stuffing Casserole</a>
-    <a href="./cheesy-chicken-parmesan-meatballs.html" style="border-color: darkkhaki">Chicken Parmesan Meatballs</a>
-    <a href="./chicken-divan.html" style="border-color:darkkhaki">Chicken Divan</a>
-    <a href="./chinese-chicken-casserole.html" style="border-color:green">Chinese Chicken Casserole</a>
-  
-  </p>
+    <h2 class="section-title">🍽️ Dinners</h2>
+    <h3>Chicken Dinners</h3>
+    <p>
+      <a href="./chicken-rice-casserole.html" style="border-color:green">Chicken and Rice Casserole</a>
+      <a href="./chicken-wild-rice-casserole.html" style="border-color:darkkhaki">Chicken and Wild Rice (Obe)</a>
+      <a href="./chicken-stroganoff.html" style="border-color:darkkhaki">Chicken and Mushroom Stroganoff</a>
+      <a href="./chicken-tikka-masala.html" style="border-color: darkred">Chicken Tikka Masala</a>
+      <a href="./asian-orange-chicken.html" style="border-color: darkred">Asian Orange Chicken</a>
+      <a href="./chicken-stir-fry.html" style="border-color: green">Chicken Stir-Fry</a>
+      <a href="./instant-pot-chicken-risotto.html" style="border-color: darkkhaki">Instant Pot Chicken Risotto</a>
+      <a href="./pad-prik-king.html" style="border-color:  darkkhaki">Pad Prik King</a>
+      <a href="./instant-pot-butter-chicken.html" style="border-color: darkkhaki">Instant Pot Butter Chicken</a>
+      <a href="./crispy-pepperoni-chicken.html" style="border-color:green">Crispy Pepperoni Chicken</a>
+      <a href="./chicken-korma.html" style="border-color: darkkhaki">Chicken Korma</a>
+      <a href="./quick-chicken-and-stuffing-casserole.html" style="border-color: green">Chicken and Stuffing
+        Casserole</a>
+      <a href="./cheesy-chicken-parmesan-meatballs.html" style="border-color: darkkhaki">Chicken Parmesan Meatballs</a>
+      <a href="./chicken-divan.html" style="border-color:darkkhaki">Chicken Divan</a>
+      <a href="./chinese-chicken-casserole.html" style="border-color:green">Chinese Chicken Casserole</a>
+      <a href="./chicken-enchilada .html" style="border-color:darkkhaki">Chicken Enchilada</a>
+    </p>
 
-  <!-- 🐄 Beef Dinners -->
-  <h3>Beef Dinners</h3>
+    <h3>Beef Dinners</h3>
     <a href="./grandmas-casserole.html" style="border-color:darkred">Grandma’s Casserole</a>
     <a href="./beef-enchiladas.html" style="border-color:darkkhaki">Beef Enchiladas</a>
     <a href="./ground-beef-spinach-casserole.html" style="border-color:darkkhaki">Ground Beef and Spinach Casserole</a>
@@ -145,7 +58,8 @@
     <a href="./shepherds-pie-vi.html" style="border-color:darkkhaki">Shepherd’s Pie</a>
     <a href="./taco-bake-casserole.html" style="border-color:green">Taco Bake Casserole</a>
     <a href="./one-pot-ground-beef-stroganoff.html" style="border-color:green">One-Pot Ground Beef Stroganoff</a>
-    <a href="./spicy-creamy-weeknight-bolognese.html" style="border-color:darkkhaki">Spicy Creamy Weeknight Bolognese</a>
+    <a href="./spicy-creamy-weeknight-bolognese.html" style="border-color:darkkhaki">Spicy Creamy Weeknight
+      Bolognese</a>
     <a href="./smothered-hamburger-steak.html" style="border-color:green">Smothered Hamburger Steak</a>
     <a href="./slow-cooker-chili.html" style="border-color:darkred">Slow Cooker Chili</a>
     <a href="./slow-cooker-short-ribs.html" style="border-color:darkkhaki">Slow Cooker Short Ribs</a>
@@ -153,40 +67,49 @@
     <a href="./sloppy-ottos.html" style="border-color:green">Sloppy Ottos</a>
     <a href="./hamburger-rice-casserole.html" style="border-color:green">Hamburger and Rice Casserole</a>
 
-  <!-- 🍲 Other Dinners -->
-  <h3>Other Dinners</h3>
+    <h3>Other Dinners</h3>
     <a href="./jambalaya.html" style="border-color: darkred">Jambalaya</a>
     <a href="./moussaka.html" style="border-color: darkred">Moussaka</a>
-    <a href="./crispy-gnocchi-sausage-broccoli.html" style="border-color: green">Crispy Gnocchi with Sausage and Broccoli</a>
+    <a href="./crispy-gnocchi-sausage-broccoli.html" style="border-color: green">Crispy Gnocchi with Sausage and
+      Broccoli</a>
     <a href="./cheesy-gnocchi.html" style="border-color: green">Cheesy Gnocchi with Corn and Pesto</a>
     <a href="./homemade-four-cheese-ravioli.html" style="border-color: darkkhaki">Homemade Four-Cheese Ravioli</a>
     <a href="./hot-dog-casserole.html" style="border-color:green">Hot Dog Casserole</a>
 
-  <!-- Side Dishes Section -->
-  <h2 class="section-title">🥗 Side Dishes</h2>
+    <h3>Options without Recipes</h3>
+    <p class="no-recipe" style="border-color: darkred">Homemade Pizza</p>
+    <p class="no-recipe" style="border-color: darkkhaki">Grilled Cheese</p>
+    <p class="no-recipe" style="border-color: green">Eat Out</p>
+    <p class="no-recipe" style="border-color: green">Chili Dogs</p>
+    <p class="no-recipe" style="border-color: green">Burgers</p>
+    <p class="no-recipe" style="border-color: green">Steaks</p>
+    <p class="no-recipe" style="border-color: darkkhaki">Pasta</p>
+    <p class="no-recipe" style="border-color: green">Slow Cooked Sausage</p>
+    <p class="no-recipe" style="border-color: green">Leftovers</p>
+    <p class="no-recipe" style="border-color: green">Gyros</p>
+    <p class="no-recipe" style="border-color: darkkhaki">Mexican Lasagna</p>
+
+    <h2 class="section-title">🥗 Side Dishes</h2>
     <a href="./mushroom-risotto.html" style="border-color: green">Instant Pot Mushroom Risotto</a>
     <a href="./instant-pot-mexican-rice.html" style="border-color: green">Instant Pot Mexican Rice</a>
     <a href="./queso-dip.html" style="border-color: green">Queso Dip</a>
     <a href="./royal-caribbean-mushroom-soup.html" style="border-color: darkred">Royal Caribbean Mushroom Soup</a>
 
-  <!-- Breads Section -->
-  <h2 class="section-title">🍞 Breads & Rolls</h2>
+    <h2 class="section-title">🍞 Breads & Rolls</h2>
     <a href="./sourdough-english-muffins.html" style="border-color: darkkhaki">Sourdough English Muffins</a>
     <a href="./easy-sourdough-sandwich-bread.html" style="border-color: darkkhaki">Sourdough Sandwich Bread</a>
     <a href="./the-best-dinner-rolls.html" style="border-color: darkkhaki">Dinner Rolls</a>
     <a href="./garlic-knots.html" style="border-color: darkkhaki">Garlic Knots</a>
     <a href="./pretzel-rolls.html" style="border-color: darkred">Pretzel Rolls</a>
 
-   <!-- Dessert Section -->
-  <h2 class="section-title">🍰 Desserts</h2>
+    <h2 class="section-title">🍰 Desserts</h2>
     <a href="./easy-sugar-cookies.html" style="border-color: green">Easy Sugar Cookies</a>
     <a href="./pumpkin-crumb-cake.html" style="border-color: darkkhaki">Pumpkin Crumb Cake</a>
 
-  <!-- Drink Section -->
-  <h2 class="section-title">🍸 Drinks</h2>
+    <h2 class="section-title">🍸 Drinks</h2>
     <a href="./pp-martini.html" style="border-color: green">Pumpkin Pie Martini</a>
-
   </div>
+
   <div class="modal" id="shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-title">
     <div class="modal-card">
       <div class="modal-head">
@@ -204,319 +127,7 @@
       </div>
     </div>
   </div>
-
-  <script>
-    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    const STORAGE_KEY="weeklyMenu.v1";
-    const $=(s,c=document)=>c.querySelector(s);
-    const $$=(s,c=document)=>Array.from(c.querySelectorAll(s));
-
-    const weekGrid=$("#week-grid");
-    const state=loadState();
-
-    // Build week
-    DAYS.forEach(day=>{
-      const wrap=document.createElement("div");
-      wrap.className="day"; wrap.dataset.day=day;
-      wrap.innerHTML=`
-        <div class="day-head">
-          <span>${day}</span>
-          <div class="day-actions">
-            <button class="btn btn-ghost" data-day-note="${day}" title="Add note to ${day}">+</button>
-            <button class="btn btn-ghost" data-day-clear="${day}" title="Clear ${day}">Clear</button>
-          </div>
-        </div>
-        <div class="day-list" aria-label="${day} menu"></div>`;
-      addDropHandlers(wrap);
-      weekGrid.appendChild(wrap);
-
-      // Render saved entries
-      (state[day]||[]).forEach(entry=>{
-        const list=wrap.querySelector(".day-list");
-        if(entry.type==="note"){ addNoteChip(list, entry.text); }
-        else { addRecipeChip(list, { title: entry.title, href: entry.href }); }
-      });
-    });
-
-    // Day actions
-    weekGrid.addEventListener("click",(e)=>{
-      const clearBtn=e.target.closest("[data-day-clear]");
-      const noteBtn =e.target.closest("[data-day-note]");
-      if(clearBtn){
-        const day=clearBtn.dataset.dayClear;
-        const box=weekGrid.querySelector(`.day[data-day="${day}"] .day-list`);
-        box.innerHTML=""; persist(); return;
-      }
-      if(noteBtn){
-        const day=noteBtn.dataset.dayNote;
-        const box=weekGrid.querySelector(`.day[data-day="${day}"] .day-list`);
-        const text=prompt(`Add a note for ${day}:`, "Eat Out");
-        if(text && text.trim()){ addNoteChip(box, text.trim()); persist(); }
-      }
-    });
-
-    // Toolbar
-    $("#btn-clear").addEventListener("click",()=>{
-      if(!confirm("Clear the entire weekly menu?")) return;
-      $$(".day-list").forEach(d=>d.innerHTML=""); persist();
-    });
-    $("#btn-save").addEventListener("click",persist);
-    $("#btn-shopping").addEventListener("click",buildShoppingList);
-
-    // Modal
-    const modal=$("#shopping-modal");
-    $("#btn-close").addEventListener("click",()=>modal.classList.remove("open"));
-    modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("open"); });
-    $("#btn-copy").addEventListener("click",copyShoppingList);
-
-    // Make recipe links draggable
-    enhanceRecipeLinks();
-
-    function enhanceRecipeLinks(){
-      const anchors=$$('a[href$=".html"]');
-      anchors.forEach(a=>{
-        if(!/\/recipes\/|\.\/.*\.html/i.test(a.getAttribute("href"))) return;
-        a.classList.add("recipe-draggable"); a.setAttribute("draggable","true");
-        a.addEventListener("dragstart",(ev)=>{
-          const href=new URL(a.getAttribute("href"),location.href).toString();
-          const title=(a.textContent||a.getAttribute("title")||"Recipe").trim();
-          ev.dataTransfer.setData("application/json",JSON.stringify({title,href}));
-          ev.dataTransfer.effectAllowed="copy";
-        });
-      });
-    }
-
-    function addDropHandlers(dayElem){
-      dayElem.addEventListener("dragover",(ev)=>{
-        if (!ev.dataTransfer.types.includes("application/json")) return;
-        ev.preventDefault(); ev.dataTransfer.dropEffect="copy"; dayElem.classList.add("dragover");
-      });
-      dayElem.addEventListener("dragleave",()=>dayElem.classList.remove("dragover"));
-      dayElem.addEventListener("drop",(ev)=>{
-        dayElem.classList.remove("dragover");
-        const raw=ev.dataTransfer.getData("application/json"); if(!raw) return;
-        ev.preventDefault();
-        try{
-          const data=JSON.parse(raw);
-          const list=dayElem.querySelector(".day-list");
-          addRecipeChip(list, data);
-          persist();
-        }catch{}
-      });
-    }
-
-    // ---- Chips ----
-    function addRecipeChip(listEl, { title, href }){
-      // de-dupe recipes by href
-      if (href && listEl.querySelector(`.chip[data-type="recipe"][data-href="${href}"]`)) return;
-      const chip=document.createElement("div");
-      chip.className="chip";
-      chip.dataset.type="recipe";
-      chip.dataset.href=href||"";
-      chip.innerHTML=`
-        <a href="${href}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
-        <span class="x" title="Remove" aria-label="Remove">×</span>`;
-      chip.querySelector(".x").addEventListener("click",()=>{ chip.remove(); persist(); });
-      listEl.appendChild(chip);
-      enhanceRecipeLinks();
-    }
-
-    function addNoteChip(listEl, text){
-      const chip=document.createElement("div");
-      chip.className="chip chip-note";
-      chip.dataset.type="note";
-      chip.innerHTML=`
-        <span class="note-text">${escapeHtml(text)}</span>
-        <span class="x" title="Remove" aria-label="Remove">×</span>`;
-      // Edit on double click
-      chip.addEventListener("dblclick",()=>{
-        const current = $(".note-text", chip).textContent;
-        const next = prompt("Edit note:", current);
-        if(next===null) return;
-        const trimmed = next.trim();
-        if(trimmed){ $(".note-text", chip).textContent = trimmed; persist(); }
-        else { chip.remove(); persist(); }
-      });
-      chip.querySelector(".x").addEventListener("click",()=>{ chip.remove(); persist(); });
-      listEl.appendChild(chip);
-    }
-
-    // ---- Persistence ----
-    function persist(){
-      const data={};
-      $$(".day").forEach(day=>{
-        const name=day.dataset.day; const arr=[];
-        $$(".day-list .chip",day).forEach(chip=>{
-          const type = chip.dataset.type || "recipe";
-          if(type==="note"){
-            const t = $(".note-text", chip)?.textContent?.trim();
-            if(t) arr.push({type:"note", text:t});
-          }else{
-            const a=$("a",chip);
-            if(a){
-              arr.push({type:"recipe", title:a.textContent.trim(), href:new URL(a.getAttribute("href"),location.href).toString()});
-            }
-          }
-        });
-        data[name]=arr;
-      });
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); flashToolbar();
-    }
-
-    function loadState(){
-      try{
-        const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return Object.fromEntries(DAYS.map(d=>[d,[]]));
-        const obj=JSON.parse(raw);
-        DAYS.forEach(d=>{ if(!obj[d]) obj[d]=[]; });
-        return obj;
-      }catch{ return Object.fromEntries(DAYS.map(d=>[d,[]])); }
-    }
-
-    function flashToolbar(){
-      const btn=$("#btn-save"); if(!btn) return;
-      const orig=btn.textContent; btn.textContent="Saved"; setTimeout(()=>btn.textContent=orig,800);
-    }
-
-    // ---- Shopping List (unchanged logic, ignores notes) ----
-    function sameOriginPath(url){ const u=new URL(url,location.href); return u.pathname+(u.search||""); }
-    async function fetchHtml(pathname){
-      const res=await fetch(pathname,{credentials:"same-origin",redirect:"follow"});
-      if(!res.ok){ throw new Error(`HTTP ${res.status} ${res.statusText} for ${res.url}`); }
-      return res.text();
-    }
-
-    const PANTRY = ["salt", "oregano", "garlic", "basil", "parsley", "vegetable oil", "olive oil",
-      "cornstarch", "white sugar", "taco seasoning", "chicken broth", "boiling water", "black pepper",
-      "chili powder", "cumin", "garam masala", "onion powder", "turmeric"
-    ];
-    function isPantryItem(text){ const t=(text||"").toLowerCase(); return PANTRY.some(p=>t.includes(p.toLowerCase())); }
-
-    async function buildShoppingList(){
-      const selections = collectAllMenuRecipes();
-      if (selections.length === 0) { alert("No recipes in the weekly menu yet."); return; }
-
-      const byPath = new Map();
-      for (const { title, href } of selections) {
-        const u = new URL(href, location.href);
-        const path = u.pathname + (u.search || "");
-        if (!byPath.has(path)) byPath.set(path, { title, href, path });
-      }
-
-      const results=[]; const warnings=[]; const errors=[];
-      for (const item of byPath.values()) {
-        try{
-          const html = await fetch(item.path, { credentials: "same-origin", redirect: "follow" })
-            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`); return r.text(); });
-          const ings = extractIngredientsFromHtml(html);
-          if (!ings || ings.length === 0) warnings.push(`No ingredients found: ${item.title}`);
-          else results.push(...ings);
-        }catch(err){ errors.push(`Fetch failed: ${item.title} → ${item.path} (${err?.message||"unknown error"})`); }
-      }
-
-      const normalized = results.map(t => normalizeIngredient(t)).filter(Boolean);
-      const omitted = normalized.filter(isPantryItem);
-      const kept = normalized.filter(x => !isPantryItem(x));
-      const uniq = Array.from(new Set(kept));
-
-      const list = document.getElementById("shopping-list"); list.innerHTML="";
-      uniq.forEach(item => { const li=document.createElement("li"); li.textContent=item; list.appendChild(li); });
-
-      const parts=[`Collected ${uniq.length} unique ingredients`,`from ${byPath.size} recipe(s)`];
-      if (omitted.length) parts.push(`(excluded ${omitted.length} pantry item(s))`);
-      document.getElementById("shopping-summary").textContent=parts.join(" ");
-
-      const warnBox=$("#shopping-warnings"); warnBox.innerHTML="";
-      if(warnings.length){
-        const div=document.createElement("div");
-        div.innerHTML=`<p class="warn">Warnings:</p><ul>${warnings.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join("")}</ul>`;
-        warnBox.appendChild(div);
-      }
-      const errBox=$("#shopping-errors"); errBox.innerHTML="";
-      if(errors.length){ errBox.innerHTML=`<p class="warn">Errors:</p><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`; }
-
-      $("#shopping-modal").classList.add("open");
-    }
-
-    function collectAllMenuRecipes(){
-      const items=[];
-      $$(".day-list").forEach(list=>{
-        $$('.chip[data-type="recipe"]', list).forEach(chip=>{
-          const a=$("a",chip);
-          if(!a) return;
-          items.push({title:a.textContent.trim(), href:new URL(a.getAttribute("href"),location.href).toString()});
-        });
-      });
-      return items;
-    }
-
-    function extractIngredientsFromHtml(html){
-      const doc=new DOMParser().parseFromString(html,"text/html");
-      const heading=$$("h1,h2,h3,h4",doc).find(h=>h.textContent.trim().toLowerCase()==="ingredients");
-      if(heading){
-        const out=[]; let el=heading.nextElementSibling;
-        while(el){ if(/^H[1-6]$/i.test(el.tagName)) break;
-          if(el.tagName==="UL"){ $$("li",el).forEach(li=>out.push(li.textContent.trim())); }
-          el=el.nextElementSibling;
-        }
-        if(out.length) return out;
-      }
-      const allUL=$$("ul",doc);
-      if(allUL.length){
-        for(const ul of allUL){
-          const items=$$("li",ul).map(li=>li.textContent.trim()).filter(Boolean);
-          if(items.length>=3){ return items; }
-        }
-      }
-      const anyLi=$$("li",doc).slice(0,50).map(li=>li.textContent.trim()).filter(Boolean);
-      return anyLi.length?anyLi:[];
-    }
-
-    // function normalizeIngredient(s){
-    //   if(!s) return "";
-    //   s=s.replace(/\u00BD/g,"1/2").replace(/\u00BC/g,"1/4").replace(/\u00BE/g,"3/4")
-    //      .replace(/\u2153/g,"1/3").replace(/\u2154/g,"2/3").replace(/\u00A0/g," ");
-    //   s=s.replace(/^[*•\-\u2022]\s*/,"").trim().replace(/\s+/g," ");
-    //   s=s.replace(/^(~|about\s+)?\d+([\/\.\d]*)?\s*(cups?|tsp|tbsp|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|ml|l|pinch|cloves?|cans?|packages?)\b\.?,?\s*/i,"");
-    //   return s.toLowerCase();
-    // }
-    function normalizeIngredient(s) {
-      if (!s) return "";
-      return String(s)
-        // Normalize common unicode fractions/dashes & spaces (no content removal)
-        .replace(/\u00BD/g, "1/2")
-        .replace(/\u00BC/g, "1/4")
-        .replace(/\u00BE/g, "3/4")
-        .replace(/\u2150/g, "1/7")
-        .replace(/\u2153/g, "1/3")
-        .replace(/\u2154/g, "2/3")
-        .replace(/\u00A0/g, " ")
-        .replace(/[–—−]/g, "-")
-        // Remove leading bullets only; keep everything else
-        .replace(/^[*•\-\u2022]\s*/, "")
-        // Collapse internal whitespace
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-    
-    function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-    async function copyShoppingList(){
-      const items=$$("#shopping-list li").map(li=>li.textContent);
-      try{ await navigator.clipboard.writeText(items.join("\n")); alert("Shopping list copied."); }
-      catch{ alert("Copy failed; your browser may block clipboard access."); }
-    }
-
-    // drag auto-scroll
-    let autoScrollInterval=null;
-    document.addEventListener("dragover",(e)=>{
-      const EDGE=60, SPEED=20;
-      const y=e.clientY, h=window.innerHeight;
-      clearInterval(autoScrollInterval);
-      if(y<EDGE){ autoScrollInterval=setInterval(()=>window.scrollBy({top:-SPEED,behavior:"auto"}),16); }
-      else if(y>h-EDGE){ autoScrollInterval=setInterval(()=>window.scrollBy({top:SPEED,behavior:"auto"}),16); }
-    });
-    document.addEventListener("dragleave",()=>{ clearInterval(autoScrollInterval); });
-    document.addEventListener("drop",()=>{ clearInterval(autoScrollInterval); });
-  </script>
+  <script src="handler.js"></script>
 </body>
+
 </html>
