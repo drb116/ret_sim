@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>YoLink Temperature Demo (Secure)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; line-height: 1.4 }
+    fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem }
+    label { display: block; margin: 0.25rem 0 0.25rem }
+    select, button { padding: 0.5rem; margin: 0.25rem 0; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap }
+    .muted { opacity: 0.75; font-size: 0.9em }
+    .ok { font-weight: 600 }
+    .err { color: #b00020; font-weight: 600 }
+    pre { background: #f6f6f6; padding: .75rem; border-radius: 6px; overflow: auto }
+  </style>
+</head>
+<body>
+  <h1>YoLink Temperature Demo</h1>
+
+  <fieldset>
+    <legend>1) Sign in (server holds your UAID/Secret)</legend>
+    <div class="row">
+      <button id="btnSignIn">Sign in</button>
+      <span id="authStatus" class="muted"></span>
+    </div>
+    <div class="muted">Credentials are on the server; the browser never sees them.</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>2) Load devices</legend>
+    <div class="row">
+      <button id="btnLoadDevices" disabled>Load devices</button>
+      <span id="devicesStatus" class="muted"></span>
+    </div>
+    <label for="deviceSelect">Select device</label>
+    <select id="deviceSelect" disabled></select>
+  </fieldset>
+
+  <fieldset>
+    <legend>3) Get temperature</legend>
+    <div class="row">
+      <button id="btnGetReading" disabled>Get reading</button>
+      <span id="readingStatus" class="muted"></span>
+    </div>
+    <div id="readingOut"></div>
+  </fieldset>
+
+  <details>
+    <summary>Raw response</summary>
+    <pre id="debug"></pre>
+  </details>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const setText = (id, text, cls) => { const el = $(id); el.textContent = text; el.className = cls || 'muted'; };
+    const setDebug = (obj) => { $('debug').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); };
+
+    async function json(url, opts) {
+      const res = await fetch(url, { headers: { 'content-type': 'application/json' }, ...opts });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || res.statusText);
+      return data;
+    }
+
+    document.getElementById('btnSignIn').addEventListener('click', async () => {
+      try {
+        setText('authStatus', 'Signing in…');
+        const data = await json('/api/signin', { method: 'POST' });
+        const mins = Math.round((data.expiresAt - Date.now()) / 60000);
+        setText('authStatus', `Signed in. Token ~${mins} min left.`, 'ok');
+        $('btnLoadDevices').disabled = false;
+      } catch (e) {
+        setText('authStatus', String(e.message || e), 'err');
+      }
+    });
+
+    document.getElementById('btnLoadDevices').addEventListener('click', async () => {
+      try {
+        setText('devicesStatus', 'Loading…');
+        const data = await json('/api/devices');
+        const list = data.devices || [];
+        const sel = $('deviceSelect');
+        sel.innerHTML = '';
+        if (!list.length) {
+          sel.disabled = true;
+          setText('devicesStatus', 'No devices found.', 'err');
+          return;
+        }
+        for (const d of list) {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.textContent = `${d.name || d.type || 'Device'} — ${d.deviceId}`;
+          sel.appendChild(opt);
+        }
+        sel.disabled = false;
+        $('btnGetReading').disabled = false;
+        setText('devicesStatus', `Loaded ${list.length} device(s).`, 'ok');
+      } catch (e) {
+        setText('devicesStatus', String(e.message || e), 'err');
+      }
+    });
+
+    document.getElementById('btnGetReading').addEventListener('click', async () => {
+      try {
+        setText('readingStatus', 'Querying…');
+        const sel = $('deviceSelect');
+        if (!sel.value) throw new Error('Pick a device');
+        const deviceId = sel.value;
+        const data = await json(`/api/th/${encodeURIComponent(deviceId)}`);
+        const resp = data.response || {};
+        const st = resp?.data?.state;
+        const reportAt = resp?.data?.reportAt;
+        if (!st) throw new Error('Unexpected response.');
+        document.getElementById('readingOut').innerHTML = `
+          <h3>Reading</h3>
+          <div><b>Temperature:</b> ${st.temperature}°${st.mode || 'C'}</div>
+          <div><b>Humidity:</b> ${st.humidity}%</div>
+          <div><b>Battery:</b> ${st.battery}/4</div>
+          <div><b>Reported at:</b> ${reportAt}</div>
+        `;
+        setDebug(resp);
+        setText('readingStatus', 'Success.', 'ok');
+      } catch (e) {
+        setText('readingStatus', String(e.message || e), 'err');
+      }
+    });
+  </script>
+</body>
+</html>
