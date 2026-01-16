@@ -78,6 +78,11 @@ const puzzleWordsEl = document.getElementById("puzzleWords");
 const resetBtn = document.getElementById("resetBtn");
 const checkBtn = document.getElementById("checkBtn");
 
+document.addEventListener("pointermove", movePointerDrag, { passive: false });
+document.addEventListener("pointerup", endPointerDrag, { passive: false });
+document.addEventListener("pointercancel", endPointerDrag, { passive: false });
+
+
 // Show selected words (you can hide this later)
 // puzzleWordsEl.textContent = PUZZLE_WORDS.join(" / ");
 
@@ -100,6 +105,8 @@ function makeTile(letter) {
   tile.textContent = letter;
   tile.draggable = true;
   tile.id = `tile-${nextTileId++}`;
+
+  tile.addEventListener("pointerdown", (ev) => startPointerDrag(tile, ev));
 
   tile.addEventListener("dragstart", (ev) => {
     const fromTraySlot = tile.closest(".tray-slot");
@@ -332,21 +339,57 @@ function isSolved() {
   return attempt === solution;
 }
 
-// function isSolved() {
-//   // Must fill every board slot
-//   for (let col = 0; col < 5; col++) {
-//     const expectedSet = EXPECTED_COLS[col];
-//     const expectedCount = expectedSet.size;
+// ---------- Dragging ---------
+let drag = null;
 
-//     const got = slotLettersInCol(col);
-//     if (got.length !== expectedCount) return false;
+function isValidDropTarget(el) {
+  if (!el) return null;
+  const target = el.closest(".slot, .tray-slot");
+  if (!target) return null;
+  if (target.querySelector(".tile")) return null; // must be empty
+  return target;
+}
 
-//     const gotSet = new Set(got);
-//     if (gotSet.size !== expectedCount) return false; // no duplicates in column
-//     for (const ch of expectedSet) if (!gotSet.has(ch)) return false;
-//   }
-//   return true;
-// }
+function startPointerDrag(tile, ev) {
+  ev.preventDefault();
+
+  const rect = tile.getBoundingClientRect();
+
+  const ghost = tile.cloneNode(true);
+  ghost.classList.add("drag-ghost");
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.height = `${rect.height}px`;
+  document.body.appendChild(ghost);
+
+  tile.classList.add("dragging");
+
+  drag = { tile, ghost };
+
+  movePointerDrag(ev);
+}
+
+function movePointerDrag(ev) {
+  if (!drag) return;
+  drag.ghost.style.left = `${ev.clientX}px`;
+  drag.ghost.style.top = `${ev.clientY}px`;
+}
+
+function endPointerDrag(ev) {
+  if (!drag) return;
+
+  const { tile, ghost } = drag;
+  ghost.remove();
+  tile.classList.remove("dragging");
+
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const target = isValidDropTarget(el);
+
+  if (target) {
+    target.appendChild(tile);   // move real tile
+  }
+
+  drag = null;
+}
 
 // ---------- Buttons ----------
 resetBtn.addEventListener("click", () => {

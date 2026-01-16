@@ -158,6 +158,8 @@ button:hover{ border-color: #9ca3af; }
   font-size: 30px;
   font-weight: 900;
   cursor: grab;
+  touch-action: none;       /* critical: lets you drag without scrolling */
+  user-select: none;
 }
 
 .tile:active{ cursor: grabbing; }
@@ -194,3 +196,13 @@ button:hover{ border-color: #9ca3af; }
   place-items: center;
 }
 
+.tile.dragging {
+  opacity: 0.6;
+}
+
+.drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
