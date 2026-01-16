@@ -1,0 +1,196 @@
+/* style.css */
+
+:root{
+  --bg: #fafafa;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #374151;
+
+  --border: #888;
+  --slot-fill: #e6e6e6;
+
+  --tile-fill: #bdbdbd;
+  --tile-border: #333;
+
+  --square: 64px;
+  --gap: 10px;
+  --v-gap: 10px;
+
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1{
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+p{
+  margin: 0 0 16px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* Page layout */
+.wrap{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* Panels */
+.board, .tray{
+  width: 100%;
+  max-width: 560px;
+  background: var(--panel);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.board-head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.board-meta .label{
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.words{
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+button{
+  appearance: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover{ border-color: #9ca3af; }
+
+.primary{
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+/* Board grid: 5 columns, each column is a positioning context */
+.board-grid{
+  display: grid;
+  grid-template-columns: repeat(5, var(--square));
+  gap: 18px;
+  justify-content: center;
+  align-items: start;
+  padding: 6px 0;
+}
+
+/* Column is relative so we can absolutely place slots inside it */
+.col{
+  position: relative;
+  width: var(--square);
+  /* height will be set inline from JS per puzzle */
+}
+
+/* Slot squares (now absolutely positioned) */
+.slot{
+  position: absolute;
+  left: 0;
+
+  width: var(--square);
+  height: var(--square);
+  background: var(--slot-fill);
+  border: 3px solid var(--border);
+  border-radius: 10px;
+
+  display: grid;
+  place-items: center;
+
+  user-select: none;
+}
+
+.slot.dragover{
+  background: #dcdcdc;
+}
+
+.slot.filled{
+  background: var(--slot-fill);
+}
+
+/* Tile square */
+.tile{
+  width: calc(var(--square) - 14px);
+  height: calc(var(--square) - 14px);
+  border-radius: 8px;
+
+  background: var(--tile-fill);
+  border: 2px solid var(--tile-border);
+
+  display: grid;
+  place-items: center;
+
+  font-size: 30px;
+  font-weight: 900;
+  cursor: grab;
+}
+
+.tile:active{ cursor: grabbing; }
+
+/* Tray */
+.tray h2{
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.tray-grid{
+  display: grid;
+  grid-template-columns: repeat(4, var(--square));
+  grid-auto-rows: var(--square);
+  gap: 12px 16px;
+  justify-content: center;
+  align-content: center;
+
+  padding: 14px;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+}
+
+/* Tray slot placeholder (fixed positions so tiles don't shift) */
+.tray-slot{
+  width: var(--square);
+  height: var(--square);
+  border-radius: 10px;
+
+  border: 2px dashed rgba(17,24,39,0.25);
+  background: transparent;
+
+  display: grid;
+  place-items: center;
+}
+

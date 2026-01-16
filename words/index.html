@@ -1,0 +1,44 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word Columns – Drag & Drop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Word Columns</h1>
+  <p>Drag the 8 letter tiles into the column boxes. Each column shows the possible letters for that
+     position. Once completed, you puzzle should create words going across. Each column that has more
+     than one option will use each of those letters with the words that it spans. For example, if a
+     letter is between rows 1 and 2, it will be used for words 1 and 2.
+  </p>
+
+  <div class="wrap">
+    <!-- BOARD -->
+    <section class="board">
+      <div class="board-head">
+        <div class="board-meta">
+          <div id="puzzleWords" class="words"></div>
+        </div>
+        <div class="actions">
+          <button id="resetBtn" class="primary">Reset</button>
+          <button id="checkBtn">Check Solution</button>
+        </div>
+      </div>
+
+      <div id="board" class="board-grid" aria-label="Board"></div>
+    </section>
+
+    <!-- TILE TRAY -->
+    <aside class="tray">
+      <h2>Letter Tiles</h2>
+      <div id="tray" class="tray-grid" aria-label="Tray"></div>
+    </aside>
+  </div>
+
+  <script src="puzzles.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
