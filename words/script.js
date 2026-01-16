@@ -6,15 +6,15 @@ function localMidnightDays(d = new Date()) {
   return Math.floor(mid.getTime() / 86400000);
 }
 
-// Make "today" (the day you deploy) map to row 0.
-// Edit this date if you want a different start.
-const START_ROW_ZERO_ON = new Date(2026, 0, 15); // Jan 15, 2026 (month is 0-based)
+// Make "today" map to puzzle row 0 on this date
+const START_ROW_ZERO_ON = new Date(2026, 0, 15);
 
 const todayIdx = localMidnightDays(new Date());
 const baseIdx = localMidnightDays(START_ROW_ZERO_ON);
-const PUZZLE_ROW = ((todayIdx - baseIdx) % PUZZLES.length + PUZZLES.length) % PUZZLES.length;
+const PUZZLE_ROW =
+  ((todayIdx - baseIdx) % PUZZLES.length + PUZZLES.length) % PUZZLES.length;
 
-const PUZZLE_WORDS = PUZZLES[PUZZLE_ROW].map(w => w.toUpperCase());
+const PUZZLE_WORDS = PUZZLES[PUZZLE_ROW].map((w) => w.toUpperCase());
 
 // ---------- Validation + board model ----------
 function uniqueLetters(words) {
@@ -32,26 +32,34 @@ function lettersByPosition(words) {
 }
 
 function validatePuzzle(words) {
-  if (!Array.isArray(words) || words.length < 2 || words.length > 4) return { ok: false, msg: "Puzzle must have 2–4 words." };
-  if (words.some(w => typeof w !== "string" || w.length !== 5)) return { ok: false, msg: "All words must be 5 letters." };
+  if (!Array.isArray(words) || words.length < 2 || words.length > 4)
+    return { ok: false, msg: "Puzzle must have 2–4 words." };
+  if (words.some((w) => typeof w !== "string" || w.length !== 5))
+    return { ok: false, msg: "All words must be 5 letters." };
 
   const uniq = uniqueLetters(words);
-  if (uniq.size !== 8) return { ok: false, msg: `Puzzle must have exactly 8 unique letters (has ${uniq.size}).` };
+  if (uniq.size !== 8)
+    return { ok: false, msg: `Puzzle must have exactly 8 unique letters (has ${uniq.size}).` };
 
   const cols = lettersByPosition(words);
-  if (cols.some(set => set.size < 1 || set.size > 4)) return { ok: false, msg: "Each position must have 1–4 possible letters." };
+  if (cols.some((set) => set.size < 1 || set.size > 4))
+    return { ok: false, msg: "Each position must have 1–4 possible letters." };
 
   return { ok: true, cols, uniq };
 }
 
 const puzzleCheck = validatePuzzle(PUZZLE_WORDS);
 if (!puzzleCheck.ok) {
-  // Fail loudly in the console; keep UI from exploding
   console.error("Invalid puzzle:", PUZZLE_WORDS, puzzleCheck.msg);
 }
 
-const EXPECTED_COLS = puzzleCheck.ok ? puzzleCheck.cols : lettersByPosition(["ABCDE","FGHIJ"]);
-const TILE_LETTERS = puzzleCheck.ok ? Array.from(puzzleCheck.uniq) : ["A","B","C","D","E","F","G","H"];
+const EXPECTED_COLS = puzzleCheck.ok
+  ? puzzleCheck.cols
+  : lettersByPosition(["ABCDE", "FGHIJ"]);
+
+const TILE_LETTERS = puzzleCheck.ok
+  ? Array.from(puzzleCheck.uniq)
+  : ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 // ---------- Seeded shuffle (deterministic per day + puzzle row) ----------
 function mulberry32(seed) {
@@ -78,37 +86,56 @@ const puzzleWordsEl = document.getElementById("puzzleWords");
 const resetBtn = document.getElementById("resetBtn");
 const checkBtn = document.getElementById("checkBtn");
 
-document.addEventListener("pointermove", movePointerDrag, { passive: false });
-document.addEventListener("pointerup", endPointerDrag, { passive: false });
-document.addEventListener("pointercancel", endPointerDrag, { passive: false });
+// Optional: show words (debug). Leave blank for “hidden”
+if (puzzleWordsEl) puzzleWordsEl.textContent = ""; // or PUZZLE_WORDS.join(" / ")
 
-
-// Show selected words (you can hide this later)
-// puzzleWordsEl.textContent = PUZZLE_WORDS.join(" / ");
-
+// ---------- Row color helpers ----------
 function rowColorVar(rowIndex1Based) {
   return `var(--row${rowIndex1Based})`;
 }
 
 function applyRowColorsToSlot(slot, rows) {
-  // rows is an array like [1] or [1,2] or [1,2,3]
   slot.dataset.n = String(rows.length);
-
-  // Set CSS custom properties used by the gradients
   slot.style.setProperty("--c1", rowColorVar(rows[0]));
   if (rows[1]) slot.style.setProperty("--c2", rowColorVar(rows[1]));
   if (rows[2]) slot.style.setProperty("--c3", rowColorVar(rows[2]));
   if (rows[3]) slot.style.setProperty("--c4", rowColorVar(rows[3]));
 }
 
-// ---------- Drag data helpers ----------
+// ---------- Drag data helpers (desktop HTML5 DnD) ----------
 function setDragData(ev, obj) {
-  ev.dataTransfer.setData("application/json", JSON.stringify(obj));
+  try {
+    ev.dataTransfer.setData("application/json", JSON.stringify(obj));
+  } catch {}
 }
 
 function getDragData(ev) {
-  const raw = ev.dataTransfer.getData("application/json");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const raw = ev.dataTransfer.getData("application/json");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Swap helper (works for tray + board + mobile) ----------
+function dropTileWithSwap(target, draggedTile, fromId) {
+  if (!target || !draggedTile) return;
+
+  const existing = target.querySelector(".tile");
+
+  // empty target => just move
+  if (!existing) {
+    target.appendChild(draggedTile);
+    return;
+  }
+
+  // occupied => swap back to origin
+  const from = fromId ? document.getElementById(fromId) : null;
+  if (!from) return; // can’t swap if origin unknown
+
+  target.appendChild(draggedTile);
+  from.appendChild(existing);
 }
 
 // ---------- Tile creation ----------
@@ -121,37 +148,37 @@ function makeTile(letter) {
   tile.draggable = true;
   tile.id = `tile-${nextTileId++}`;
 
-  tile.addEventListener("pointerdown", (ev) => startPointerDrag(tile, ev));
-
+  // Desktop HTML5 drag
   tile.addEventListener("dragstart", (ev) => {
-    const fromTraySlot = tile.closest(".tray-slot");
-    const fromBoardSlot = tile.closest(".slot");
-
+    const from = tile.parentElement; // .slot or .tray-slot
     setDragData(ev, {
       tileId: tile.id,
-      letter,
-      sourceType: fromTraySlot ? "tray" : "board",
-      sourceTrayIndex: fromTraySlot ? fromTraySlot.dataset.index : null,
-      sourceBoardKey: fromBoardSlot ? fromBoardSlot.dataset.key : null
+      fromId: from?.id || null,
     });
   });
+
+  // Mobile pointer drag
+  tile.addEventListener("pointerdown", (ev) => startPointerDrag(tile, ev));
 
   return tile;
 }
 
-// ---------- Build tray (fixed 8 slots, no shifting) ----------
+// ---------- Tray (fixed 8 slots, no shifting) ----------
 const TRAY_SIZE = 8;
-let initialTrayOrder = []; // letters in fixed tray order for today
+let initialTrayOrder = [];
 
 function buildTraySlots() {
   trayEl.innerHTML = "";
+
   for (let i = 0; i < TRAY_SIZE; i++) {
     const s = document.createElement("div");
     s.className = "tray-slot";
     s.dataset.index = String(i);
+    s.id = `tray-${i}`;
 
+    // IMPORTANT: allow dropping even if occupied (for swap).
     s.addEventListener("dragover", (e) => {
-      if (!s.querySelector(".tile")) e.preventDefault();
+      e.preventDefault();
     });
 
     s.addEventListener("drop", (e) => {
@@ -159,14 +186,10 @@ function buildTraySlots() {
       const data = getDragData(e);
       if (!data || !data.tileId) return;
 
-      if (s.querySelector(".tile")) return; // must be empty
+      const dragged = document.getElementById(data.tileId);
+      if (!dragged) return;
 
-      const tile = document.getElementById(data.tileId);
-      if (!tile) return;
-
-      // If moving within tray, just move the existing node
-      // If coming from board, we also just move the existing node
-      s.appendChild(tile);
+      dropTileWithSwap(s, dragged, data.fromId);
     });
 
     trayEl.appendChild(s);
@@ -176,11 +199,9 @@ function buildTraySlots() {
 function buildTrayForToday() {
   buildTraySlots();
 
-  // Create deterministic order once per page load (per day/puzzle)
   if (initialTrayOrder.length === 0) {
     initialTrayOrder = [...TILE_LETTERS];
 
-    // seed: day + puzzle row
     const seed = (todayIdx * 1315423911) ^ (PUZZLE_ROW * 2654435761);
     const rng = mulberry32(seed >>> 0);
 
@@ -188,73 +209,66 @@ function buildTrayForToday() {
   }
 
   const traySlots = Array.from(trayEl.querySelectorAll(".tray-slot"));
-  traySlots.forEach(s => (s.innerHTML = ""));
+  traySlots.forEach((s) => (s.innerHTML = ""));
 
-  // Create new tiles fresh on build
   nextTileId = 1;
   initialTrayOrder.forEach((letter, i) => {
-    const tile = makeTile(letter);
-    traySlots[i].appendChild(tile);
+    traySlots[i].appendChild(makeTile(letter));
   });
 }
 
-// ---------- Build board (5 columns with variable heights) ----------
-function clearBoard() {
-  boardEl.querySelectorAll(".slot").forEach(slot => {
-    slot.innerHTML = "";
-    slot.classList.add("empty");
-    slot.classList.remove("filled");
-  });
-}
-
+// ---------- Board build (5 columns, centered by row group) ----------
 function buildBoard() {
   boardEl.innerHTML = "";
 
   const wordCount = PUZZLE_WORDS.length;
 
-  // Must match CSS: slot size + vertical gap
-  const square = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--square")) || 64;
-  const vGap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--v-gap")) || 10;
-  const step = square + vGap;
+  const square =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--square")
+    ) || 64;
+  const vGap =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--v-gap")
+    ) || 10;
 
-  // Height so rows have room for top/bottom extremes (rowCount rows)
+  const step = square + vGap;
   const colHeight = (wordCount - 1) * step + square;
 
-  // Precompute: for each column, group words by letter and compute "center row"
-  // Row index is 1..wordCount, based on the order of PUZZLE_WORDS in puzzles.js
   for (let col = 0; col < 5; col++) {
     const colWrap = document.createElement("div");
     colWrap.className = "col";
     colWrap.dataset.col = String(col);
     colWrap.style.height = `${colHeight}px`;
 
-    // Map letter -> array of row indices where it appears
+    // Map letter -> array of word rows (1-based)
     const letterRows = new Map();
-
     for (let w = 0; w < wordCount; w++) {
       const letter = PUZZLE_WORDS[w][col];
-      const rowIndex = w + 1; // 1-based
+      const rowIndex = w + 1;
       if (!letterRows.has(letter)) letterRows.set(letter, []);
       letterRows.get(letter).push(rowIndex);
     }
 
-    // Create slots for each distinct letter option, positioned by averaged row
-    const slots = [];
+    const createdSlots = [];
+    let slotIdx = 0;
+
     for (const [letter, rows] of letterRows.entries()) {
-      const center = rows.reduce((a, b) => a + b, 0) / rows.length; // can be fractional like 2.5
+      const center = rows.reduce((a, b) => a + b, 0) / rows.length;
       const topPx = (center - 1) * step;
 
       const slot = document.createElement("div");
       slot.className = "slot empty";
+      slot.id = `b-c${col}-s${slotIdx++}`; // unique id for swapping
       slot.dataset.col = String(col);
       slot.dataset.center = String(center);
       slot.dataset.rows = rows.join(",");
-      applyRowColorsToSlot(slot, rows); 
       slot.style.top = `${topPx}px`;
 
-      // Drag/drop handlers
+      applyRowColorsToSlot(slot, rows);
+
+      // IMPORTANT: allow dropping even if occupied (swap).
       slot.addEventListener("dragover", (e) => {
-        if (slot.querySelector(".tile")) return;
         e.preventDefault();
         slot.classList.add("dragover");
       });
@@ -267,47 +281,36 @@ function buildBoard() {
         e.preventDefault();
         slot.classList.remove("dragover");
 
-        if (slot.querySelector(".tile")) return;
-
         const data = getDragData(e);
         if (!data || !data.tileId) return;
 
-        const tile = document.getElementById(data.tileId);
-        if (!tile) return;
+        const dragged = document.getElementById(data.tileId);
+        if (!dragged) return;
 
-        slot.appendChild(tile);
+        dropTileWithSwap(slot, dragged, data.fromId);
       });
 
-      slots.push(slot);
+      createdSlots.push(slot);
     }
 
-    // Sort top-to-bottom by center position (so DOM order matches visuals)
-    slots.sort((a, b) => parseFloat(a.dataset.center) - parseFloat(b.dataset.center));
-    slots.forEach(s => colWrap.appendChild(s));
-
+    createdSlots.sort(
+      (a, b) => parseFloat(a.dataset.center) - parseFloat(b.dataset.center)
+    );
+    createdSlots.forEach((s) => colWrap.appendChild(s));
     boardEl.appendChild(colWrap);
   }
 }
 
-// ---------- Check solution ----------
-function slotLettersInCol(colIndex) {
-  const colEl = boardEl.querySelector(`.col[data-col="${colIndex}"]`);
-  if (!colEl) return [];
-  const letters = [];
-  colEl.querySelectorAll(".slot").forEach(slot => {
-    const tile = slot.querySelector(".tile");
-    if (tile) letters.push(tile.textContent);
-  });
-  return letters;
-}
-
+// ---------- Check solution (row-group aware) ----------
 function slotsInColumn(colIndex) {
   const colEl = boardEl.querySelector(`.col[data-col="${colIndex}"]`);
   return colEl ? Array.from(colEl.querySelectorAll(".slot")) : [];
 }
 
 function slotAppliesToRow(slot, rowIndex1Based) {
-  const rows = (slot.dataset.rows || "").split(",").map(x => parseInt(x, 10));
+  const rows = (slot.dataset.rows || "")
+    .split(",")
+    .map((x) => parseInt(x, 10));
   return rows.includes(rowIndex1Based);
 }
 
@@ -315,22 +318,19 @@ function buildWordsFromBoard() {
   const wordCount = PUZZLE_WORDS.length;
   const built = [];
 
-  // Must have a tile in every board slot
+  // Ensure every board slot is filled
   for (let col = 0; col < 5; col++) {
     for (const s of slotsInColumn(col)) {
       if (!s.querySelector(".tile")) return null;
     }
   }
 
-  // Build each word row-by-row by selecting the slot that applies to that row
+  // Build each word by choosing the tile from the slot that applies to that row
   for (let r = 1; r <= wordCount; r++) {
     let word = "";
-
     for (let col = 0; col < 5; col++) {
       const colSlots = slotsInColumn(col);
-
-      // find the single slot in this column that applies to row r
-      const targetSlot = colSlots.find(s => slotAppliesToRow(s, r));
+      const targetSlot = colSlots.find((s) => slotAppliesToRow(s, r));
       if (!targetSlot) return null;
 
       const tile = targetSlot.querySelector(".tile");
@@ -338,7 +338,6 @@ function buildWordsFromBoard() {
 
       word += tile.textContent;
     }
-
     built.push(word);
   }
 
@@ -349,25 +348,20 @@ function isSolved() {
   const built = buildWordsFromBoard();
   if (!built) return false;
 
-  // Compare as sets (order doesn't matter)
   const attempt = [...built].sort().join("|");
   const solution = [...PUZZLE_WORDS].sort().join("|");
   return attempt === solution;
 }
 
-// ---------- Dragging ---------
+// ---------- Mobile pointer drag (with swap) ----------
 let drag = null;
 
-function isValidDropTarget(el) {
-  if (!el) return null;
-  const target = el.closest(".slot, .tray-slot");
-  if (!target) return null;
-  if (target.querySelector(".tile")) return null; // must be empty
-  return target;
-}
-
 function startPointerDrag(tile, ev) {
+  // only left mouse / touch
   ev.preventDefault();
+
+  const from = tile.parentElement;
+  const fromId = from?.id || null;
 
   const rect = tile.getBoundingClientRect();
 
@@ -379,8 +373,7 @@ function startPointerDrag(tile, ev) {
 
   tile.classList.add("dragging");
 
-  drag = { tile, ghost };
-
+  drag = { tile, ghost, fromId };
   movePointerDrag(ev);
 }
 
@@ -393,30 +386,34 @@ function movePointerDrag(ev) {
 function endPointerDrag(ev) {
   if (!drag) return;
 
-  const { tile, ghost } = drag;
+  const { tile, ghost, fromId } = drag;
   ghost.remove();
   tile.classList.remove("dragging");
 
   const el = document.elementFromPoint(ev.clientX, ev.clientY);
-  const target = isValidDropTarget(el);
+  const target = el ? el.closest(".slot, .tray-slot") : null;
 
   if (target) {
-    target.appendChild(tile);   // move real tile
+    dropTileWithSwap(target, tile, fromId);
   }
 
   drag = null;
 }
 
+document.addEventListener("pointermove", movePointerDrag, { passive: false });
+document.addEventListener("pointerup", endPointerDrag, { passive: false });
+document.addEventListener("pointercancel", endPointerDrag, { passive: false });
+
 // ---------- Buttons ----------
 resetBtn.addEventListener("click", () => {
   buildBoard();
-  initialTrayOrder = []; // rebuild exact same order for today (seeded)
+  // reset tray to same deterministic order for today
+  initialTrayOrder = [];
   buildTrayForToday();
 });
 
 checkBtn.addEventListener("click", () => {
   const built = buildWordsFromBoard();
-
   if (!built) {
     alert("The board is not complete yet.");
     return;
@@ -428,7 +425,6 @@ checkBtn.addEventListener("click", () => {
     alert(`❌ Not quite.\n\nYou currently have:\n${built.join(" / ")}`);
   }
 });
-
 
 // ---------- Init ----------
 buildBoard();
