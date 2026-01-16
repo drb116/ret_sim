@@ -50,8 +50,7 @@ p{
 /* Panels */
 .board, .tray{
   width: 100%;
-  max-width: 560px;
-  max-width: 100%;
+  max-width: min(100%, 560px);
   background: var(--panel);
   padding: 16px;
   border-radius: 14px;
