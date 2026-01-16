@@ -86,6 +86,21 @@ document.addEventListener("pointercancel", endPointerDrag, { passive: false });
 // Show selected words (you can hide this later)
 // puzzleWordsEl.textContent = PUZZLE_WORDS.join(" / ");
 
+function rowColorVar(rowIndex1Based) {
+  return `var(--row${rowIndex1Based})`;
+}
+
+function applyRowColorsToSlot(slot, rows) {
+  // rows is an array like [1] or [1,2] or [1,2,3]
+  slot.dataset.n = String(rows.length);
+
+  // Set CSS custom properties used by the gradients
+  slot.style.setProperty("--c1", rowColorVar(rows[0]));
+  if (rows[1]) slot.style.setProperty("--c2", rowColorVar(rows[1]));
+  if (rows[2]) slot.style.setProperty("--c3", rowColorVar(rows[2]));
+  if (rows[3]) slot.style.setProperty("--c4", rowColorVar(rows[3]));
+}
+
 // ---------- Drag data helpers ----------
 function setDragData(ev, obj) {
   ev.dataTransfer.setData("application/json", JSON.stringify(obj));
@@ -234,6 +249,7 @@ function buildBoard() {
       slot.dataset.col = String(col);
       slot.dataset.center = String(center);
       slot.dataset.rows = rows.join(",");
+      applyRowColorsToSlot(slot, rows); 
       slot.style.top = `${topPx}px`;
 
       // Drag/drop handlers
