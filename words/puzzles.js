@@ -4,7 +4,7 @@ const PUZZLES = [
   ["CARTS", "HARTS", "PANTS"],
   ["STYLE", "SHINE"],
   ["EPOCH", "SPICY"],
-  ["MACHO", "YACHT", "NACHO"],
+  ["MACHO", "NACHO", "YACHT"],
   ["TRICK","THING"],
   ["SWIPE", "SLOPE", "SCOPE"],
   ["KNOBS","KNIFE"],
