@@ -13,7 +13,6 @@ const todayIdx = localMidnightDays(new Date());
 const baseIdx = localMidnightDays(START_ROW_ZERO_ON);
 const PUZZLE_ROW =
   ((todayIdx - baseIdx) % PUZZLES.length + PUZZLES.length) % PUZZLES.length;
-
 const PUZZLE_WORDS = PUZZLES[PUZZLE_ROW].map((w) => w.toUpperCase());
 
 // ---------- Validation + board model ----------

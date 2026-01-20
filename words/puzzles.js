@@ -2,11 +2,11 @@ const PUZZLES = [
   ["FAITH", "PARTY"],
   ["LIGHT", "NIGHT", "MIGHT", "RIGHT"],
   ["CARTS", "HARTS", "PANTS"],
-  ["STYLE","SHINE"],
-  ["EPOCH", "SPICY",],
-  ["MACHO", "YACHT","NACHO"]
+  ["STYLE", "SHINE"],
+  ["EPOCH", "SPICY"],
+  ["MACHO", "YACHT", "NACHO"],
   ["TRICK","THING"],
-  ["SWIPE", "SLOPE", "SCOPE"]
+  ["SWIPE", "SLOPE", "SCOPE"],
   ["KNOBS","KNIFE"],
   ["STAKE", "SLAKE", "SNAKE", "SHAKE"],
   ["BLAME", "BLAZE", "BLOKE"],
