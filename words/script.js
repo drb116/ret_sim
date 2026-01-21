@@ -88,6 +88,7 @@ function showSolvedBanner() {
   solvedBannerEl.textContent = `Today’s Puzzle Solved in ${finalTimeText}`;
   solvedBannerEl.hidden = false;
   timerEl.hidden = true;
+  pauseBtn.hidden = true;
 }
 
 function hideSolvedBanner() {
