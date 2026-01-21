@@ -16,6 +16,103 @@ const PUZZLE_ROW =
 
 const PUZZLE_WORDS = PUZZLES[PUZZLE_ROW].map((w) => w.toUpperCase());
 
+// ---------- Timer ----------
+const timerEl = document.getElementById("timer");
+const solvedBannerEl = document.getElementById("solvedBanner");
+
+let timerStartMs = 0;        // performance.now() when started/resumed
+let accumulatedMs = 0;       // total elapsed time before current run
+let timerIntervalId = null;
+let finalTimeText = "00:00";
+
+function formatElapsed(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const s = totalSeconds % 60;
+  const m = Math.floor(totalSeconds / 60) % 60;
+  const h = Math.floor(totalSeconds / 3600);
+  const pad2 = (n) => String(n).padStart(2, "0");
+  if (h > 0) return `${h}:${pad2(m)}:${pad2(s)}`;
+  return `${m}:${pad2(s)}`;
+}
+
+function currentElapsedMs() {
+  if (!timerStartMs) return accumulatedMs;
+  return accumulatedMs + (performance.now() - timerStartMs);
+}
+
+function updateTimerDisplay() {
+  finalTimeText = formatElapsed(currentElapsedMs());
+  if (timerEl) timerEl.textContent = finalTimeText;
+}
+
+function startTimerFresh() {
+  stopTimerInterval();
+  accumulatedMs = 0;
+  timerStartMs = performance.now();
+  updateTimerDisplay();
+  timerIntervalId = window.setInterval(updateTimerDisplay, 250);
+}
+
+function pauseTimer() {
+  if (!timerStartMs) return; // already paused/stopped
+  accumulatedMs = currentElapsedMs();
+  timerStartMs = 0;
+  stopTimerInterval();
+  updateTimerDisplay();
+}
+
+function resumeTimer() {
+  if (timerStartMs) return; // already running
+  timerStartMs = performance.now();
+  stopTimerInterval();
+  timerIntervalId = window.setInterval(updateTimerDisplay, 250);
+}
+
+function stopTimerCompletely() {
+  // used on solve: freeze time where it is
+  accumulatedMs = currentElapsedMs();
+  timerStartMs = 0;
+  stopTimerInterval();
+  updateTimerDisplay();
+}
+
+function stopTimerInterval() {
+  if (timerIntervalId) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
+}
+
+function showSolvedBanner() {
+  if (!solvedBannerEl) return;
+  solvedBannerEl.textContent = `Today’s Puzzle Solved in ${finalTimeText}`;
+  solvedBannerEl.hidden = false;
+  timerEl.hidden = true;
+}
+
+function hideSolvedBanner() {
+  if (!solvedBannerEl) return;
+  solvedBannerEl.hidden = true;
+  solvedBannerEl.textContent = "";
+}
+
+// ---------- Pause state ----------
+let isPaused = false;
+
+function showPauseModal() {
+  if (!pauseModal) return;
+  pauseModal.hidden = false;
+  isPaused = true;
+  pauseTimer();
+}
+
+function hidePauseModal() {
+  if (!pauseModal) return;
+  pauseModal.hidden = true;
+  isPaused = false;
+  resumeTimer();
+}
+
 // ---------- Confetti (no libraries) ----------
 let confettiCanvas = null;
 let confettiCtx = null;
@@ -217,7 +314,10 @@ const boardEl = document.getElementById("board");
 const trayEl = document.getElementById("tray");
 const puzzleWordsEl = document.getElementById("puzzleWords");
 const resetBtn = document.getElementById("resetBtn");
-const checkBtn = document.getElementById("checkBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const pauseModal = document.getElementById("pauseModal");
+const resumeBtn = document.getElementById("resumeBtn");
+
 
 // Optional: show words (debug). Leave blank for “hidden”
 if (puzzleWordsEl) puzzleWordsEl.textContent = "";
@@ -311,9 +411,21 @@ function maybeCongratulate() {
   if (hasCongratulated) return;
   if (isSolved()) {
     hasCongratulated = true;
-    startConfetti({ durationMs: 3800, burst: 220 });
+
+    // If paused when solved (rare), clear modal
+    if (isPaused) {
+      pauseModal.hidden = true;
+      isPaused = false;
+    }
+
+    stopTimerCompletely();
+    showSolvedBanner();
+
+    startConfetti?.({ durationMs: 3800, burst: 220 });
   }
 }
+
+
 
 // ---------- Swap helper (works for tray + board + mobile) ----------
 // Returns true if a move/swap happened, false if nothing changed.
@@ -370,6 +482,7 @@ const TRAY_SIZE = 8;
 let initialTrayOrder = [];
 
 function buildTraySlots() {
+  
   trayEl.innerHTML = "";
 
   for (let i = 0; i < TRAY_SIZE; i++) {
@@ -383,6 +496,7 @@ function buildTraySlots() {
     });
 
     s.addEventListener("drop", (e) => {
+      if (isPaused) return;
       e.preventDefault();
       const data = getDragData(e);
       if (!data || !data.tileId) return;
@@ -474,6 +588,7 @@ function buildBoard() {
       });
 
       slot.addEventListener("drop", (e) => {
+        if (isPaused) return;
         e.preventDefault();
         slot.classList.remove("dragover");
 
@@ -527,6 +642,15 @@ function movePointerDrag(ev) {
 
 function endPointerDrag(ev) {
   if (!drag) return;
+  if (isPaused) {
+  // cancel drag without moving anything
+  const { ghost, tile } = drag;
+  ghost.remove();
+  tile.classList.remove("dragging");
+  drag = null;
+  return;
+}
+
 
   const { tile, ghost, fromId } = drag;
   ghost.remove();
@@ -549,18 +673,53 @@ document.addEventListener("pointercancel", endPointerDrag, { passive: false });
 
 // ---------- Buttons ----------
 resetBtn.addEventListener("click", () => {
-  hasCongratulated = false; // allow alert again after reset
-  stopConfetti();
+  hasCongratulated = false;
+
+  // close pause modal if open
+  if (pauseModal) pauseModal.hidden = true;
+  isPaused = false;
+
+  stopConfetti?.();
+  hideSolvedBanner();
+
   buildBoard();
-  initialTrayOrder = []; // rebuild exact same order for today (seeded)
+  initialTrayOrder = [];
   buildTrayForToday();
+
+  // startTimerFresh();
 });
 
-// Leave the button on the page but make it do nothing for now
-checkBtn.addEventListener("click", () => {
-  // intentionally no-op
+
+pauseBtn?.addEventListener("click", () => {
+  if (hasCongratulated) return; // optional: ignore pause after solved
+  showPauseModal();
+});
+
+resumeBtn?.addEventListener("click", () => {
+  hidePauseModal();
+});
+
+pauseModal?.addEventListener("click", (e) => {
+  if (e.target === pauseModal) hidePauseModal();
+});
+
+// ---------- Auto-pause on tab switch / minimize ----------
+document.addEventListener("visibilitychange", () => {
+  // If they leave the tab, pause (but don’t pause if already solved)
+  if (document.hidden) {
+    if (!hasCongratulated && !isPaused) {
+      showPauseModal();
+    }
+  }
+});
+
+window.addEventListener("blur", () => {
+  if (!hasCongratulated && !isPaused) {
+    showPauseModal();
+  }
 });
 
 // ---------- Init ----------
 buildBoard();
 buildTrayForToday();
+startTimerFresh();
