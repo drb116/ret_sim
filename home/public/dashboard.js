@@ -2,10 +2,17 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const AUTO_REFRESH_MS = 60_000;
 const DINNER_DAY_COUNT = 6; // Today + next five days
 const CALENDAR_DAY_COUNT = 5;
+const CAMERA_BASE_URL = "http://192.168.1.119";
+const CAMERA_CHANNEL = 1;
+const CAMERA_REFRESH_MS = 3_000;
+const CAMERA_RETRY_MS = 30_000;
+const CAMERA_STORAGE_KEY = "familyHome.reolink.credentials.v1";
 
 let mealRefreshInProgress = false;
 let calendarRefreshInProgress = false;
 let weatherRefreshInProgress = false;
+let cameraRefreshTimer = null;
+let cameraCredentials = null;
 
 const $ = selector => document.querySelector(selector);
 
@@ -14,6 +21,7 @@ loadCalendarDashboard({ showLoading: true });
 loadMealDashboard({ showLoading: true });
 loadWeatherDashboard({ showLoading: true });
 wireDashboardEvents();
+initCameraDashboard();
 startDashboardRefresh();
 window.setInterval(updateClock, 30_000);
 
@@ -373,6 +381,156 @@ function normalizeRecipeHref(href) {
   }
 }
 
+
+function readCameraCredentials() {
+  try {
+    const value = localStorage.getItem(CAMERA_STORAGE_KEY);
+    if (!value) return null;
+
+    const parsed = JSON.parse(value);
+    if (!parsed?.user || !parsed?.password) return null;
+
+    return {
+      user: String(parsed.user),
+      password: String(parsed.password)
+    };
+  } catch (error) {
+    console.warn("Could not read local camera credentials:", error);
+    return null;
+  }
+}
+
+function saveCameraCredentials(user, password) {
+  const credentials = {
+    user: String(user).trim(),
+    password: String(password)
+  };
+
+  localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify(credentials));
+  cameraCredentials = credentials;
+}
+
+function cameraSnapshotUrl() {
+  if (!cameraCredentials) return "";
+
+  const url = new URL("/cgi-bin/api.cgi", CAMERA_BASE_URL);
+  url.searchParams.set("cmd", "Snap");
+  url.searchParams.set("channel", String(CAMERA_CHANNEL));
+  url.searchParams.set("rs", String(Date.now()));
+  url.searchParams.set("user", cameraCredentials.user);
+  url.searchParams.set("password", cameraCredentials.password);
+  return url.toString();
+}
+
+function initCameraDashboard() {
+  const image = $("#camera-image");
+  const frame = $("#camera-frame");
+  const openLink = $("#camera-open-link");
+
+  if (!image || !frame || !openLink) return;
+
+  frame.href = CAMERA_BASE_URL;
+  openLink.href = CAMERA_BASE_URL;
+
+  image.addEventListener("load", handleCameraLoad);
+  image.addEventListener("error", handleCameraError);
+
+  cameraCredentials = readCameraCredentials();
+
+  if (location.hash === "#camera-setup") {
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
+    window.setTimeout(openCameraSetup, 0);
+  }
+
+  if (cameraCredentials) {
+    refreshCamera();
+  } else {
+    hideCameraCard();
+  }
+}
+
+function openCameraSetup() {
+  const dialog = $("#camera-setup-dialog");
+  const username = $("#camera-username");
+  const password = $("#camera-password");
+  if (!dialog || !username || !password) return;
+
+  const existing = readCameraCredentials();
+  username.value = existing?.user || "familyHome";
+  password.value = existing?.password || "";
+
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+    window.setTimeout(() => password.focus(), 0);
+  }
+}
+
+function closeCameraSetup() {
+  const dialog = $("#camera-setup-dialog");
+  if (dialog?.open) dialog.close();
+}
+
+function handleCameraSetupSubmit(event) {
+  event.preventDefault();
+
+  const username = $("#camera-username")?.value.trim();
+  const password = $("#camera-password")?.value ?? "";
+  if (!username || !password) return;
+
+  try {
+    saveCameraCredentials(username, password);
+    closeCameraSetup();
+    refreshCamera();
+  } catch (error) {
+    console.error("Could not save local camera credentials:", error);
+  }
+}
+
+function refreshCamera() {
+  clearCameraRefreshTimer();
+  if (document.hidden || !cameraCredentials) return;
+
+  const image = $("#camera-image");
+  if (!image) return;
+
+  image.src = cameraSnapshotUrl();
+}
+
+function handleCameraLoad() {
+  const card = $("#camera-card");
+  const grid = $(".glance-grid");
+  const status = $("#camera-status");
+  if (card) card.hidden = false;
+  if (grid) grid.classList.add("camera-available");
+  if (status) status.textContent = "Local network • updates every 3 seconds";
+  scheduleCameraRefresh(CAMERA_REFRESH_MS);
+}
+
+function handleCameraError() {
+  hideCameraCard();
+  scheduleCameraRefresh(CAMERA_RETRY_MS);
+}
+
+function hideCameraCard() {
+  const card = $("#camera-card");
+  const grid = $(".glance-grid");
+  if (card) card.hidden = true;
+  if (grid) grid.classList.remove("camera-available");
+}
+
+function scheduleCameraRefresh(delay) {
+  clearCameraRefreshTimer();
+  if (document.hidden || !cameraCredentials) return;
+  cameraRefreshTimer = window.setTimeout(refreshCamera, delay);
+}
+
+function clearCameraRefreshTimer() {
+  if (cameraRefreshTimer !== null) {
+    window.clearTimeout(cameraRefreshTimer);
+    cameraRefreshTimer = null;
+  }
+}
+
 function wireDashboardEvents() {
   $("#btn-refresh-meals").addEventListener("click", () => {
     loadMealDashboard({ showLoading: true });
@@ -385,6 +543,10 @@ function wireDashboardEvents() {
   $("#btn-refresh-weather").addEventListener("click", () => {
     loadWeatherDashboard({ showLoading: true });
   });
+
+  $("#btn-camera-settings")?.addEventListener("click", openCameraSetup);
+  $("#btn-camera-cancel")?.addEventListener("click", closeCameraSetup);
+  $("#camera-setup-form")?.addEventListener("submit", handleCameraSetupSubmit);
 }
 
 function startDashboardRefresh() {
@@ -396,12 +558,16 @@ function startDashboardRefresh() {
   }, AUTO_REFRESH_MS);
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      updateClock();
-      loadMealDashboard();
-      loadCalendarDashboard();
-      loadWeatherDashboard();
+    if (document.hidden) {
+      clearCameraRefreshTimer();
+      return;
     }
+
+    updateClock();
+    loadMealDashboard();
+    loadCalendarDashboard();
+    loadWeatherDashboard();
+    refreshCamera();
   });
 }
 

@@ -49,7 +49,7 @@
         </article>
       </section>
 
-      <section class="dashboard-section glance-section" aria-label="Weather and dinner plans">
+      <section class="dashboard-section glance-section" aria-label="Weather, home camera, and dinner plans">
         <div class="glance-grid">
           <article class="weather-card">
             <div class="compact-card-heading">
@@ -82,6 +82,27 @@
             <div class="weather-status" id="weather-status" aria-live="polite">Loading weather…</div>
           </article>
 
+          <article class="camera-card" id="camera-card" hidden>
+            <div class="compact-card-heading camera-card-heading">
+              <div>
+                <p class="panel-kicker camera-kicker">Home camera</p>
+                <h2>At home</h2>
+              </div>
+
+              <div class="compact-actions">
+                <button class="refresh-button camera-settings" id="btn-camera-settings" type="button" aria-label="Camera settings" title="Camera settings">⚙</button>
+                <a class="compact-manage-link camera-open-link" id="camera-open-link" href="http://192.168.1.119" target="_blank" rel="noopener" aria-label="Open Reolink">↗</a>
+              </div>
+            </div>
+
+            <a class="camera-frame" id="camera-frame" href="http://192.168.1.119" target="_blank" rel="noopener" aria-label="Open Reolink camera system">
+              <img class="camera-image" id="camera-image" alt="Home security camera snapshot">
+              <span class="camera-local-badge">Local network</span>
+            </a>
+
+            <div class="camera-status" id="camera-status">Updates every 3 seconds</div>
+          </article>
+
           <article class="dinner-card">
             <div class="compact-card-heading">
               <div>
@@ -107,6 +128,31 @@
       </section>
     </main>
   </div>
+
+  <dialog class="camera-setup-dialog" id="camera-setup-dialog" aria-labelledby="camera-setup-heading">
+    <form class="camera-setup-form" id="camera-setup-form">
+      <div>
+        <p class="panel-kicker camera-kicker">Local setup</p>
+        <h2 id="camera-setup-heading">Home camera</h2>
+        <p class="camera-setup-copy">These credentials are saved only in this browser and are used only to request snapshots directly from the Reolink NVR on your home network.</p>
+      </div>
+
+      <label class="camera-field">
+        <span>Username</span>
+        <input id="camera-username" name="camera-username" type="text" autocomplete="username" value="familyHome" required>
+      </label>
+
+      <label class="camera-field">
+        <span>Password</span>
+        <input id="camera-password" name="camera-password" type="password" autocomplete="current-password" required>
+      </label>
+
+      <div class="camera-dialog-actions">
+        <button class="camera-dialog-button secondary" id="btn-camera-cancel" type="button">Cancel</button>
+        <button class="camera-dialog-button primary" type="submit">Save camera</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="/dashboard.js"></script>
 </body>

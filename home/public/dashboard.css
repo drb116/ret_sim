@@ -171,7 +171,12 @@
   gap: 18px;
 }
 
+.glance-grid.camera-available {
+  grid-template-columns: minmax(250px, 0.72fr) minmax(330px, 1fr) minmax(380px, 1.18fr);
+}
+
 .weather-card,
+.camera-card,
 .dinner-card {
   position: relative;
   min-height: 330px;
@@ -186,6 +191,7 @@
 }
 
 .weather-card::before,
+.camera-card::before,
 .dinner-card::before {
   content: "";
   position: absolute;
@@ -201,6 +207,10 @@
 
 .weather-card::before {
   background: var(--blue);
+}
+
+.camera-card::before {
+  background: var(--yellow);
 }
 
 .dinner-card::before {
@@ -230,6 +240,10 @@
 
 .dinner-kicker {
   color: var(--green);
+}
+
+.camera-kicker {
+  color: var(--yellow);
 }
 
 .weather-refresh:hover,
@@ -454,14 +468,189 @@
   font-size: 0.9rem;
 }
 
+
+
+.camera-card {
+  min-width: 0;
+}
+
+.camera-card-heading {
+  margin-bottom: 14px;
+}
+
+.camera-settings:hover,
+.camera-settings:focus-visible,
+.camera-open-link:hover,
+.camera-open-link:focus-visible {
+  border-color: color-mix(in srgb, var(--yellow) 52%, transparent);
+  background: rgba(247, 214, 107, 0.08);
+}
+
+.camera-frame {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(148, 180, 215, 0.13);
+  border-radius: 15px;
+  background: #05080d;
+  text-decoration: none;
+}
+
+.camera-frame:hover,
+.camera-frame:focus-visible {
+  border-color: color-mix(in srgb, var(--yellow) 48%, transparent);
+  outline: none;
+}
+
+.camera-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-local-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(3, 8, 15, 0.76);
+  color: #dce8f5;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+
+.camera-status {
+  margin-top: 11px;
+  color: #718398;
+  font-size: 0.72rem;
+}
+
+.camera-setup-dialog {
+  width: min(460px, calc(100% - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.camera-setup-dialog::backdrop {
+  background: rgba(3, 8, 15, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.camera-setup-form {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+}
+
+.camera-setup-form h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: -0.04em;
+}
+
+.camera-setup-copy {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.camera-field {
+  display: grid;
+  gap: 7px;
+}
+
+.camera-field span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.camera-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font: inherit;
+}
+
+.camera-field input:focus {
+  border-color: color-mix(in srgb, var(--yellow) 52%, transparent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(247, 214, 107, 0.08);
+}
+
+.camera-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.camera-dialog-button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.camera-dialog-button.secondary {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+}
+
+.camera-dialog-button.primary {
+  border-color: color-mix(in srgb, var(--yellow) 48%, transparent);
+  background: rgba(247, 214, 107, 0.12);
+  color: var(--text);
+}
+
+@media (max-width: 1100px) {
+  .glance-grid.camera-available {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .glance-grid.camera-available .dinner-card {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 900px) {
-  .glance-grid {
+  .glance-grid,
+  .glance-grid.camera-available {
     grid-template-columns: 1fr;
   }
 
   .weather-card,
+  .camera-card,
   .dinner-card {
     min-height: auto;
+  }
+
+  .glance-grid.camera-available .dinner-card {
+    grid-column: auto;
   }
 }
 
@@ -504,6 +693,7 @@
   }
 
   .weather-card,
+  .camera-card,
   .dinner-card {
     padding: 22px;
   }
